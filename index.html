@@ -1063,6 +1063,35 @@
       letter-spacing: 1px;
     }
 
+    /* Lightbox — always hidden until .active */
+    #win-lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0,0,0,0.96);
+      align-items: center;
+      justify-content: center;
+      cursor: zoom-out;
+    }
+    #win-lightbox.active { display: flex; }
+    #win-lightbox img {
+      max-width: 92vw;
+      max-height: 92vh;
+      object-fit: contain;
+      border: 2px solid var(--green);
+      box-shadow: 0 0 40px rgba(61,255,138,0.35);
+    }
+    #win-lightbox .lb-close-hint {
+      position: absolute;
+      top: 18px;
+      right: 22px;
+      color: var(--green-dim);
+      font-size: 11px;
+      letter-spacing: 1px;
+      pointer-events: none;
+    }
+
     #snake-close {
       position: absolute;
       top: 18px;
@@ -1824,14 +1853,22 @@
     <div class="snake-msg" id="snake-msg">Press <b>ENTER</b> or <b>SPACE</b> to start — arrow keys / WASD to steer</div>
   </div>
 
-  <!-- SNAKE WIN MODAL — text only, no images -->
+  <!-- SNAKE WIN MODAL -->
   <div id="snake-win-modal">
     <div class="win-title">CONGRATULATIONS!</div>
     <div class="win-score-badge" id="win-score-badge">SCORE: 0</div>
-    <div class="win-sub">You scored 20+ — impressive neural bandwidth.<br>You just cracked ADEEB’s snake challenge.</div>
+    <div class="win-sub">You scored 20+ &mdash; impressive neural bandwidth.<br>You just cracked ADEEB&rsquo;s snake challenge.</div>
+    <button class="btn" id="win-view-photo" style="border-color:var(--green);color:var(--green);">&gt; view_operator_photo</button>
     <div class="win-hint">press ESC or click below to close</div>
-    <button class="btn" id="win-close-btn">&gt; close_session</button>
+    <button class="btn ghost" id="win-close-btn">&gt; close_session</button>
   </div>
+
+  <!-- PHOTO LIGHTBOX — hidden until triggered -->
+  <div id="win-lightbox">
+    <span class="lb-close-hint">click anywhere to close</span>
+    <img src="adeeb.jpg" alt="Adeeb Ahammed KM">
+  </div>
+
     <!-- Virtual Keyboard D-pad for mobile devices -->
     <div class="mobile-controls" id="snake-mobile-controls">
       <div class="mobile-grid">
@@ -3150,16 +3187,33 @@
 
     /* ============ SNAKE WIN MODAL ============ */
     (function () {
-      const winModal = document.getElementById('snake-win-modal');
-      const closeBtn = document.getElementById('win-close-btn');
+      const winModal  = document.getElementById('snake-win-modal');
+      const closeBtn  = document.getElementById('win-close-btn');
+      const viewBtn   = document.getElementById('win-view-photo');
+      const lightbox  = document.getElementById('win-lightbox');
       if (!winModal || !closeBtn) return;
 
+      // Close win modal
       closeBtn.addEventListener('click', () => {
         winModal.classList.remove('active');
       });
 
+      // Open lightbox
+      viewBtn.addEventListener('click', () => {
+        lightbox.classList.add('active');
+      });
+
+      // Close lightbox on click anywhere inside it
+      lightbox.addEventListener('click', () => {
+        lightbox.classList.remove('active');
+      });
+
+      // ESC closes both
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') winModal.classList.remove('active');
+        if (e.key === 'Escape') {
+          lightbox.classList.remove('active');
+          winModal.classList.remove('active');
+        }
       });
     })();
 
