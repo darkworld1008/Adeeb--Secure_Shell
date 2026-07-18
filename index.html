@@ -1,0 +1,3143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADEEB // SECURE_SHELL</title>
+  <link rel="icon" type="image/jpeg" href="logo.jpg">
+  <link rel="shortcut icon" type="image/jpeg" href="logo.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;500;700;800&display=swap"
+    rel="stylesheet">
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    :root {
+      --bg: #03080e;
+      --bg-darken: #020508;
+      --bg-panel: rgba(7, 21, 16, 0.6);
+      --bg-panel-alt: rgba(12, 31, 22, 0.85);
+      --line: rgba(61, 255, 138, 0.15);
+      --line-active: rgba(61, 255, 138, 0.4);
+      --green: #3dff8a;
+      --green-soft: #25b567;
+      --green-dim: #1b4d32;
+      --green-glow: rgba(61, 255, 138, 0.25);
+      --amber: #ffb627;
+      --amber-glow: rgba(255, 182, 39, 0.25);
+      --red: #ff3b5c;
+      --red-glow: rgba(255, 59, 92, 0.25);
+      --white: #ebfaef;
+      --text-muted: #8ab69d;
+      --font-display: 'VT323', monospace;
+      --font-mono: 'JetBrains Mono', monospace;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --transition-fast: 0.15s ease;
+      --transition-norm: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--green);
+      font-family: var(--font-mono);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::selection {
+      background: var(--green);
+      color: var(--bg);
+    }
+
+    a {
+      color: var(--amber);
+      text-decoration: none;
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--green-dim);
+      border: 2px solid var(--bg);
+    }
+
+    /* ============ CRT / SCANLINE LAYER ============ */
+    .crt-scanlines {
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom,
+          rgba(0, 0, 0, 0.28) 0px,
+          rgba(0, 0, 0, 0.28) 1px,
+          transparent 2px,
+          transparent 3px);
+      mix-blend-mode: multiply;
+    }
+
+    .crt-vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 9997;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.55) 100%);
+    }
+
+    .crt-flicker {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      background: rgba(60, 255, 140, 0.02);
+      animation: flicker 6s infinite;
+    }
+
+    @keyframes flicker {
+
+      0%,
+      19%,
+      21%,
+      23%,
+      25%,
+      54%,
+      56%,
+      100% {
+        opacity: 1;
+      }
+
+      20%,
+      24%,
+      55% {
+        opacity: 0.55;
+      }
+    }
+
+    .crt-rgb {
+      position: fixed;
+      inset: 0;
+      z-index: 9996;
+      pointer-events: none;
+      background: repeating-linear-gradient(90deg,
+          rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.02) 1px, rgba(0, 0, 255, 0.02) 2px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .crt-flicker {
+        animation: none;
+      }
+
+      html {
+        scroll-behavior: auto;
+      }
+    }
+
+    .glow {
+      text-shadow: 0 0 4px rgba(61, 255, 138, 0.55), 0 0 14px rgba(61, 255, 138, 0.25);
+    }
+
+    .glow-amber {
+      text-shadow: 0 0 4px rgba(255, 182, 39, 0.6), 0 0 14px rgba(255, 182, 39, 0.25);
+    }
+
+    .glow-red {
+      text-shadow: 0 0 4px rgba(255, 59, 92, 0.6), 0 0 14px rgba(255, 59, 92, 0.25);
+    }
+
+    /* ============ BOOT SCREEN ============ */
+    #boot {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: #010503;
+      color: var(--green);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      padding: 40px;
+      white-space: pre-wrap;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: opacity .6s ease;
+    }
+
+    #boot .boot-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    #boot .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: var(--green);
+      animation: blink 1s step-end infinite;
+      vertical-align: middle;
+    }
+
+    #boot-skip {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      background: none;
+      border: 1px solid var(--green-dim);
+      color: var(--green-dim);
+      font-family: var(--font-mono);
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+
+    #boot-skip:hover {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    /* ============ TOP STATUS BAR ============ */
+    #top-statusbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 600;
+      background: rgba(0, 8, 4, 0.97);
+      border-bottom: 1px solid var(--green-dim);
+      padding: 3px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: .8px;
+      color: var(--green-dim);
+      flex-wrap: nowrap;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    #top-statusbar .tsb-left {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    #top-statusbar .tsb-right {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .tsb-badge {
+      color: var(--green);
+      font-weight: 700;
+      animation: tsbPulse 2.6s ease-in-out infinite;
+    }
+
+    .tsb-badge.sys-ok {
+      color: var(--amber);
+    }
+
+    .tsb-sep {
+      color: var(--line-active);
+    }
+
+    #tsb-clock {
+      color: var(--white);
+      letter-spacing: 1.2px;
+    }
+
+    @keyframes tsbPulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.45;
+      }
+    }
+
+    /* ============ NAV ============ */
+    nav {
+      position: fixed;
+      top: 22px;
+      left: 0;
+      right: 0;
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 28px;
+      background: rgba(3, 8, 10, 0.92);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .nav-brand {
+      font-family: var(--font-display);
+      font-size: 24px;
+      letter-spacing: 2px;
+      color: var(--green);
+    }
+
+    .nav-brand .dot {
+      color: var(--amber);
+      animation: blink 1.4s step-end infinite;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 22px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav-links a {
+      color: rgba(235, 250, 239, 0.82);
+      font-size: 12px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding-bottom: 3px;
+      border-bottom: 2px solid transparent;
+      transition: .2s;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: var(--green);
+      border-bottom-color: var(--green);
+    }
+
+    .nav-toggle {
+      display: none;
+      background: none;
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-family: var(--font-mono);
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    @media (max-width:820px) {
+      .nav-links {
+        position: fixed;
+        top: 75px;
+        left: 0;
+        right: 0;
+        background: var(--bg);
+        flex-direction: column;
+        padding: 18px 28px;
+        gap: 14px;
+        border-bottom: 1px solid var(--line);
+        transform: translateY(-140%);
+        transition: transform .3s ease;
+        z-index: 499;
+      }
+
+      .nav-links.open {
+        transform: translateY(0);
+      }
+
+      .nav-toggle {
+        display: block;
+      }
+    }
+
+    section {
+      padding: 90px 28px;
+      max-width: 980px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .eyebrow {
+      color: var(--amber);
+      font-size: 12px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .eyebrow::before {
+      content: '// ';
+    }
+
+    h2.section-title {
+      font-family: var(--font-display);
+      font-size: 40px;
+      letter-spacing: 1px;
+      margin: 0 0 34px;
+      color: var(--white);
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 26px;
+      position: relative;
+    }
+
+    .panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 26px;
+      background: var(--bg-panel-alt);
+      border-bottom: 1px solid var(--line);
+      border-radius: 4px 4px 0 0;
+    }
+
+    .panel::after {
+      content: '● ● ●';
+      position: absolute;
+      top: 5px;
+      left: 12px;
+      font-size: 10px;
+      color: var(--green-dim);
+      letter-spacing: 4px;
+    }
+
+    .panel-body {
+      margin-top: 26px;
+    }
+
+    /* ============ HERO ============ */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 120px;
+    }
+
+    .hero-tag {
+      color: var(--green-dim);
+      font-size: 13px;
+      margin-bottom: 18px;
+      letter-spacing: 1px;
+    }
+
+    .hero-tag .lb {
+      color: var(--red);
+    }
+
+    h1.hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(46px, 9vw, 104px);
+      line-height: 0.95;
+      margin: 0 0 18px;
+      color: var(--white);
+      position: relative;
+    }
+
+    h1.hero-title span {
+      color: var(--green);
+    }
+
+    /* ── GLITCH EFFECT ─────────────────────────────────────── */
+    .glitch {
+      position: relative;
+      display: inline-block;
+    }
+
+    /* Lock ADEEB to white — glitch never overrides this */
+    h1.hero-title .glitch:first-child {
+      color: var(--white) !important;
+    }
+
+    /* Lock _SYSTEMS to green — glitch never overrides this */
+    h1.hero-title .glitch:last-child {
+      color: var(--green) !important;
+    }
+
+    /* Red channel ghost — shifted left */
+    .glitch::before {
+      content: attr(data-text);
+      position: absolute;
+      left: -3px;
+      top: 0;
+      color: #ff2d55;
+      clip-path: var(--glitch-clip-1, inset(0 0 100% 0));
+      transform: translateX(var(--glitch-x1, 0px));
+      opacity: 0.9;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
+      letter-spacing: inherit;
+      pointer-events: none;
+      animation: glitchShift1 4.5s infinite;
+    }
+
+    /* Cyan channel ghost — shifted right */
+    .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      left: 3px;
+      top: 0;
+      color: #00ffee;
+      clip-path: var(--glitch-clip-2, inset(100% 0 0 0));
+      transform: translateX(var(--glitch-x2, 0px));
+      opacity: 0.8;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
+      letter-spacing: inherit;
+      pointer-events: none;
+      animation: glitchShift2 4.5s infinite;
+    }
+
+    @keyframes glitchShift1 {
+      0%,82%,100%  { clip-path: inset(0 0 100% 0); transform: translateX(0);    opacity: 0; }
+      83%          { clip-path: inset(18% 0 60% 0); transform: translateX(-6px); opacity: .9; }
+      85%          { clip-path: inset(42% 0 30% 0); transform: translateX( 4px); opacity: .8; }
+      87%          { clip-path: inset(70% 0  5% 0); transform: translateX(-3px); opacity: .85; }
+      89%          { clip-path: inset(0  0 100% 0); transform: translateX(0);    opacity: 0; }
+      91%          { clip-path: inset(30% 0 50% 0); transform: translateX(-5px); opacity: .8; }
+      93%          { clip-path: inset(0  0 100% 0); transform: translateX(0);    opacity: 0; }
+    }
+
+    @keyframes glitchShift2 {
+      0%,82%,100%  { clip-path: inset(100% 0 0 0); transform: translateX(0);   opacity: 0; }
+      84%          { clip-path: inset(55% 0 20% 0); transform: translateX(5px); opacity: .75; }
+      86%          { clip-path: inset(10% 0 75% 0); transform: translateX(-4px);opacity: .8; }
+      88%          { clip-path: inset(80% 0  5% 0); transform: translateX(3px); opacity: .7; }
+      90%          { clip-path: inset(100% 0 0 0);  transform: translateX(0);   opacity: 0; }
+      92%          { clip-path: inset(35% 0 45% 0); transform: translateX(6px); opacity: .75; }
+      94%          { clip-path: inset(100% 0 0 0);  transform: translateX(0);   opacity: 0; }
+    }
+
+    /* subtle whole-title horizontal shake during glitch burst */
+    .glitch-active {
+      animation: glitchBodyShake 0.12s steps(2, end) forwards;
+    }
+    @keyframes glitchBodyShake {
+      0%   { transform: translateX(0); }
+      25%  { transform: translateX(-4px) skewX(-1deg); }
+      50%  { transform: translateX( 4px) skewX( 1deg); }
+      75%  { transform: translateX(-2px); }
+      100% { transform: translateX(0); }
+    }
+
+    #hero-typed {
+      font-size: 17px;
+      color: var(--green-soft);
+      min-height: 28px;
+      margin-bottom: 34px;
+    }
+
+    #hero-typed .cursor {
+      display: inline-block;
+      width: 9px;
+      height: 17px;
+      background: var(--green);
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+      margin-left: 2px;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      letter-spacing: 1px;
+      padding: 13px 22px;
+      background: transparent;
+      border: 1px solid var(--green);
+      color: var(--green);
+      cursor: pointer;
+      transition: .2s;
+      text-transform: uppercase;
+    }
+
+    .btn:hover {
+      background: var(--green);
+      color: var(--bg);
+      box-shadow: 0 0 18px rgba(61, 255, 138, 0.4);
+    }
+
+    .btn.ghost {
+      border-color: var(--green-dim);
+      color: var(--green-dim);
+    }
+
+    .btn.ghost:hover {
+      background: var(--green-dim);
+      color: var(--bg);
+      box-shadow: none;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 36px;
+      margin-top: 56px;
+      flex-wrap: wrap;
+    }
+
+    .hero-stats div {
+      font-size: 11px;
+      color: var(--green-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .hero-stats strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 30px;
+      color: var(--white);
+      letter-spacing: 1px;
+    }
+
+    /* ============ ABOUT ============ */
+    #about pre.whoami {
+      margin: 0;
+      font-size: 13.5px;
+      color: var(--green-soft);
+      white-space: pre-wrap;
+    }
+
+    #about pre.whoami .k {
+      color: var(--green-dim);
+    }
+
+    #about pre.whoami .v {
+      color: var(--white);
+    }
+
+    #about .prompt {
+      color: var(--amber);
+    }
+
+    .about-blurb {
+      margin-top: 22px;
+      color: var(--green-soft);
+      font-size: 14px;
+      max-width: 620px;
+    }
+
+    /* ============ SKILLS ============ */
+    .skill-row {
+      margin-bottom: 20px;
+    }
+
+    .skill-row .label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12.5px;
+      margin-bottom: 6px;
+      color: var(--white);
+      letter-spacing: .5px;
+    }
+
+    .skill-row .label small {
+      color: var(--green-dim);
+    }
+
+    /* ASCII progress bar */
+    .ascii-bar-wrap {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      letter-spacing: 0;
+      color: var(--green);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .ascii-bar-filled {
+      color: var(--green);
+    }
+
+    .ascii-bar-empty {
+      color: var(--green-dim);
+      opacity: .35;
+    }
+
+    .ascii-bar-pct {
+      color: var(--amber);
+      margin-left: 10px;
+      font-size: 11px;
+      letter-spacing: .5px;
+    }
+
+    .ascii-bar-label {
+      color: var(--green-soft);
+      font-size: 11px;
+      margin-left: 6px;
+    }
+
+    .scan-footer {
+      margin-top: 18px;
+      font-size: 11px;
+      color: var(--green-dim);
+      letter-spacing: 1px;
+    }
+
+    /* ============ TYPEWRITER ============ */
+    .tw-line {
+      overflow: hidden;
+      white-space: nowrap;
+      border-right: 2px solid var(--green);
+      width: 0;
+      animation: twExpand var(--tw-dur, 3s) steps(var(--tw-steps, 60), end) forwards,
+        twCursor .75s step-end infinite;
+    }
+
+    .tw-line.tw-done {
+      border-right-color: transparent;
+    }
+
+    @keyframes twExpand {
+      from {
+        width: 0;
+      }
+
+      to {
+        width: 100%;
+      }
+    }
+
+    @keyframes twCursor {
+
+      0%,
+      100% {
+        border-right-color: var(--green);
+      }
+
+      50% {
+        border-right-color: transparent;
+      }
+    }
+
+    /* ============ PROJECTS ============ */
+    .case-file {
+      margin-bottom: 26px;
+    }
+
+    .case-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .case-id {
+      color: var(--red);
+      font-size: 11px;
+      letter-spacing: 2px;
+    }
+
+    .case-title {
+      font-family: var(--font-display);
+      font-size: 30px;
+      color: var(--white);
+      margin: 4px 0 8px;
+      letter-spacing: 1px;
+    }
+
+    .case-status {
+      font-size: 10px;
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      padding: 4px 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .tag {
+      font-size: 10.5px;
+      border: 1px solid var(--line);
+      color: var(--green-soft);
+      padding: 4px 9px;
+      background: var(--bg);
+      letter-spacing: .5px;
+    }
+
+    .case-desc {
+      color: var(--green-soft);
+      font-size: 13.5px;
+      margin: 14px 0;
+    }
+
+    .threat-box {
+      border-left: 2px solid var(--amber);
+      padding: 10px 14px;
+      margin-top: 16px;
+      background: rgba(255, 182, 39, 0.05);
+      font-size: 12.5px;
+      color: var(--white);
+    }
+
+    .threat-box .th-label {
+      color: var(--amber);
+      letter-spacing: 1px;
+      font-size: 10.5px;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .redacted {
+      text-align: center;
+      color: var(--green-dim);
+      font-size: 13px;
+      letter-spacing: 1px;
+      padding: 30px;
+      border: 1px dashed var(--line);
+    }
+
+    /* ============ OS TERMINOLOGY / TERMINAL (Kali-style) ============ */
+    .term-wrap {
+      border: 1px solid var(--line);
+      background: #0a0e0a;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .term-bar {
+      background: linear-gradient(180deg, #1a1f1a, #12160f);
+      border-bottom: 1px solid var(--line);
+      padding: 9px 14px;
+      font-size: 11px;
+      color: var(--green-dim);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .term-dots {
+      display: flex;
+      gap: 7px;
+      flex-shrink: 0;
+    }
+
+    .term-dots span {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .term-dots .d-red {
+      background: #ff5f56;
+    }
+
+    .term-dots .d-yellow {
+      background: #ffbd2e;
+    }
+
+    .term-dots .d-green {
+      background: #27c93f;
+    }
+
+    .term-bar-title {
+      flex: 1;
+      text-align: center;
+      color: var(--green-soft);
+      font-size: 11px;
+      letter-spacing: .5px;
+    }
+
+    .term-bar-shell {
+      color: var(--green-dim);
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+
+    .term-body {
+      padding: 16px;
+      font-size: 12.5px;
+      height: 360px;
+      overflow-y: auto;
+      background: #050805;
+    }
+
+    .term-line {
+      margin-bottom: 4px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .term-line.cmd {
+      color: var(--white);
+    }
+
+    .term-line.out {
+      color: var(--green);
+    }
+
+    .term-line.err {
+      color: var(--red);
+    }
+
+    .term-line.info {
+      color: var(--amber);
+    }
+
+    .term-path {
+      color: var(--green);
+    }
+
+    .term-user {
+      color: #4dd8ff;
+      font-weight: 700;
+    }
+
+    .term-at {
+      color: var(--green-dim);
+    }
+
+    .term-tree {
+      color: var(--green-dim);
+    }
+
+    .term-input-row {
+      display: flex;
+      align-items: center;
+      padding: 4px 14px 14px;
+      background: #050805;
+      font-size: 12.5px;
+    }
+
+    .term-prompt {
+      color: var(--green);
+      font-weight: 700;
+      margin-right: 8px;
+      white-space: nowrap;
+    }
+
+    #term-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--white);
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+    }
+
+    .term-input-cursor {
+      width: 8px;
+      height: 15px;
+      background: var(--green);
+      display: inline-block;
+      animation: blink 1s step-end infinite;
+      margin-left: 2px;
+    }
+
+    .cheatsheet {
+      margin-top: 26px;
+    }
+
+    .cheat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+
+    .cheat-item {
+      border: 1px solid var(--line);
+      background: var(--bg-panel);
+      padding: 12px 14px;
+    }
+
+    .cheat-item code {
+      color: var(--amber);
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+
+    .cheat-item p {
+      margin: 6px 0 0;
+      color: var(--green-dim);
+      font-size: 11.5px;
+    }
+
+    /* ============ SNAKE GAME OVERLAY ============ */
+    #snake-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9500;
+      background: rgba(0, 0, 0, 0.92);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    #snake-overlay.active {
+      display: flex;
+    }
+
+    #snake-close {
+      position: absolute;
+      top: 18px;
+      right: 22px;
+      background: var(--bg-panel);
+      border: 1px solid var(--red);
+      color: var(--red);
+      font-size: 16px;
+      width: 36px;
+      height: 36px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    #snake-close:hover {
+      background: var(--red);
+      color: #000;
+    }
+
+    .snake-frame {
+      border: 1px solid var(--green);
+      box-shadow: 0 0 24px rgba(61, 255, 138, 0.25);
+      background: #000;
+      padding: 16px;
+      max-width: 95vw;
+    }
+
+    .snake-hud {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      width: 400px;
+      max-width: 90vw;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--green-dim);
+      flex-wrap: wrap;
+    }
+
+    .snake-hud b {
+      color: var(--white);
+    }
+
+    #snake-canvas {
+      display: block;
+      background: #010401;
+      max-width: min(400px, 88vw);
+      width: 100%;
+      height: auto;
+    }
+
+    .snake-msg {
+      margin-top: 14px;
+      text-align: center;
+      color: var(--amber);
+      font-size: 12.5px;
+      max-width: 90vw;
+    }
+
+    .snake-msg b {
+      color: var(--green);
+    }
+
+    /* ============ TERMINAL CARET CURSOR ============ */
+    @media (pointer:fine) {
+      body {
+        cursor: none;
+      }
+
+      a,
+      button,
+      input,
+      textarea,
+      .clickable {
+        cursor: none !important;
+      }
+    }
+
+    #cursor-trail {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 9px;
+      height: 20px;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      border: 1px solid rgba(61, 255, 138, 0.35);
+      background: rgba(61, 255, 138, 0.05);
+    }
+
+    #cursor-caret {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 9px;
+      height: 20px;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      background: var(--green);
+      box-shadow: 0 0 9px rgba(61, 255, 138, 0.75);
+      animation: caret-blink 1.1s step-end infinite;
+    }
+
+    #cursor-caret.hover {
+      width: 0;
+      height: 0;
+      background: transparent;
+      animation: none;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-left: 13px solid var(--amber);
+      box-shadow: 0 0 10px rgba(255, 182, 39, 0.75);
+    }
+
+    @keyframes caret-blink {
+      50% {
+        opacity: 0.12;
+      }
+    }
+
+    #cursor-tag {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.95);
+      border: 1px solid var(--amber);
+      color: var(--amber);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 2px 6px;
+      white-space: nowrap;
+      opacity: 0;
+      text-transform: uppercase;
+    }
+
+    @media (pointer:coarse) {
+
+      #cursor-caret,
+      #cursor-trail,
+      #cursor-tag {
+        display: none;
+      }
+
+      body {
+        cursor: auto;
+      }
+    }
+
+    /* ============ TRAINING / GAMES ============ */
+    .tabs {
+      display: flex;
+      gap: 2px;
+      flex-wrap: wrap;
+      margin-bottom: 0;
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 150px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-bottom: none;
+      color: var(--green-dim);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      letter-spacing: 1px;
+      padding: 12px 10px;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .tab-btn.active {
+      background: var(--bg-panel);
+      color: var(--green);
+      border-color: var(--green-dim);
+    }
+
+    .game-panel {
+      border: 1px solid var(--line);
+      border-top: none;
+      padding: 26px;
+      background: var(--bg-panel);
+      display: none;
+      min-height: 340px;
+    }
+
+    .game-panel.active {
+      display: block;
+    }
+
+    .game-panel h3 {
+      font-family: var(--font-display);
+      font-size: 24px;
+      color: var(--white);
+      margin: 0 0 6px;
+      letter-spacing: 1px;
+    }
+
+    .game-sub {
+      color: var(--green-dim);
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+
+    .game-hud {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 18px;
+      font-size: 11.5px;
+      color: var(--green-dim);
+      flex-wrap: wrap;
+    }
+
+    .game-hud b {
+      color: var(--white);
+    }
+
+    .feedback {
+      min-height: 22px;
+      font-size: 13px;
+      margin-top: 12px;
+    }
+
+    .feedback.ok {
+      color: var(--green);
+    }
+
+    .feedback.bad {
+      color: var(--red);
+    }
+
+    .feedback.info {
+      color: var(--amber);
+    }
+
+    /* pin game */
+    .pin-display {
+      display: flex;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .pin-slot {
+      width: 44px;
+      height: 56px;
+      border: 1px solid var(--green-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 28px;
+      color: var(--white);
+      background: var(--bg);
+    }
+
+    .pin-slot.hot {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .pin-slot.warm {
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    .pin-slot.cold {
+      border-color: var(--green-dim);
+    }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      max-width: 340px;
+    }
+
+    .keypad button {
+      padding: 12px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--green);
+      font-family: var(--font-mono);
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .keypad button:hover {
+      border-color: var(--green);
+    }
+
+    .attempts-log {
+      margin-top: 16px;
+      font-size: 11.5px;
+      color: var(--green-dim);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    /* phishing game */
+    .email-card {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      padding: 18px;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+
+    .email-card .ef {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .email-card .ef .k {
+      color: var(--green-dim);
+      width: 56px;
+      flex-shrink: 0;
+    }
+
+    .email-card .ef .v {
+      color: var(--white);
+      word-break: break-word;
+    }
+
+    .email-body {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--line);
+      color: var(--green-soft);
+    }
+
+    .verdict-btns {
+      display: flex;
+      gap: 12px;
+    }
+
+    .verdict-btns button {
+      flex: 1;
+    }
+
+    /* firewall game */
+    .packet-card {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      padding: 16px;
+      margin-bottom: 16px;
+      font-size: 12.5px;
+    }
+
+    .packet-card .pf {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      color: var(--green-soft);
+    }
+
+    .packet-card .pf b {
+      color: var(--white);
+    }
+
+    .replay-btn {
+      margin-top: 18px;
+    }
+
+    /* ============ CONTACT ============ */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width:700px) {
+      .contact-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      color: var(--green-dim);
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--white);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      padding: 11px;
+      margin-bottom: 16px;
+      box-sizing: border-box;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--green);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 110px;
+    }
+
+    .contact-links {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .contact-links a {
+      font-size: 11.5px;
+      border: 1px solid var(--line);
+      padding: 8px 12px;
+      color: var(--green-soft);
+      word-break: break-all;
+    }
+
+    .contact-links a:hover {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    /* Contact buttons row responsive */
+    #contact .btn {
+      white-space: nowrap;
+    }
+
+    @media (max-width: 520px) {
+      .contact-links {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .contact-links a {
+        width: 100%;
+        text-align: center;
+        font-size: 11px;
+        padding: 10px 8px;
+        word-break: break-word;
+      }
+      #contact .btn,
+      #contact a.btn {
+        display: block;
+        width: 100%;
+        text-align: center;
+        margin-left: 0 !important;
+        margin-bottom: 10px;
+      }
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px 28px 60px;
+      color: var(--green-dim);
+      font-size: 11.5px;
+      letter-spacing: 1px;
+      border-top: 1px solid var(--line);
+      margin-top: 40px;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--amber);
+      outline-offset: 2px;
+    }
+
+    /* ============ RESPONSIVE ============ */
+    @media (max-width:900px) {
+      section {
+        padding: 70px 22px;
+      }
+
+      h2.section-title {
+        font-size: 32px;
+      }
+    }
+
+    @media (max-width:700px) {
+      .hero-ctas {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .hero-ctas .btn {
+        text-align: center;
+      }
+
+      .case-head {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .cheat-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .term-body {
+        height: 280px;
+      }
+
+      .keypad {
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width:520px) {
+      section {
+        padding: 56px 16px;
+      }
+
+      h1.hero-title {
+        font-size: clamp(38px, 14vw, 70px);
+      }
+
+      #hero-typed {
+        font-size: 14px;
+      }
+
+      .hero-stats {
+        gap: 22px;
+      }
+
+      .hero-stats strong {
+        font-size: 22px;
+      }
+
+      h2.section-title {
+        font-size: 26px;
+      }
+
+      .panel {
+        padding: 18px;
+      }
+
+      .pin-slot {
+        width: 38px;
+        height: 48px;
+        font-size: 22px;
+      }
+
+      .keypad {
+        gap: 6px;
+      }
+
+      .keypad button {
+        padding: 10px;
+        font-size: 13px;
+      }
+
+      .tabs {
+        flex-direction: column;
+      }
+
+      .tab-btn {
+        min-width: 0;
+      }
+
+      .game-panel {
+        padding: 18px;
+      }
+
+      .nav-brand {
+        font-size: 19px;
+      }
+
+      .term-input-row {
+        flex-wrap: wrap;
+      }
+
+      #term-input {
+        min-width: 0;
+      }
+
+      .term-bar-title {
+        font-size: 9.5px;
+      }
+
+      .term-bar-shell {
+        display: none;
+      }
+
+      .term-dots span {
+        width: 9px;
+        height: 9px;
+      }
+
+      .term-tree {
+        font-size: 11px !important;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+
+      .snake-hud {
+        font-size: 10.5px;
+        gap: 8px;
+      }
+
+      #snake-close {
+        top: 10px;
+        right: 10px;
+        width: 32px;
+        height: 32px;
+      }
+
+      /* Top status bar — small screens: hide tunnel text, keep clock only */
+      #top-statusbar .tsb-sep {
+        display: none;
+      }
+      #top-statusbar .tsb-badge:first-child {
+        font-size: 8.5px;
+        letter-spacing: 0;
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .tsb-badge.sys-ok {
+        display: none;
+      }
+      #tsb-clock {
+        font-size: 9px;
+        letter-spacing: .5px;
+      }
+    }
+
+    /* ============ PROJECTS ============ */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      width: 100%;
+    }
+
+    .case-file {
+      margin-bottom: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .case-file .panel-body {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      justify-content: space-between;
+      flex-grow: 1;
+      margin-top: 28px;
+    }
+
+    /* ============ MOBILE SNAKE KEYBOARD CONTROLS ============ */
+    .mobile-controls {
+      display: none;
+      margin-top: 20px;
+      width: 100%;
+      max-width: 240px;
+    }
+
+    .mobile-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 8px;
+      width: 100%;
+    }
+
+    .m-btn {
+      background: var(--bg-panel-alt);
+      border: 1px solid var(--green);
+      color: var(--green);
+      font-family: var(--font-mono);
+      font-size: 18px;
+      height: 52px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      touch-action: manipulation;
+      transition: background 0.1s, transform 0.1s, box-shadow 0.1s;
+      box-shadow: 0 0 10px rgba(61, 255, 138, 0.15);
+    }
+
+    .m-btn:active {
+      background: var(--green);
+      color: var(--bg-darken);
+      transform: scale(0.95);
+      box-shadow: 0 0 15px var(--green);
+    }
+
+    .m-btn.btn-action {
+      font-size: 10px;
+      font-weight: bold;
+      border-color: var(--amber);
+      color: var(--amber);
+      box-shadow: 0 0 10px rgba(255, 182, 39, 0.15);
+    }
+
+    .m-btn.btn-action:active {
+      background: var(--amber);
+      color: var(--bg-darken);
+      box-shadow: 0 0 15px var(--amber);
+    }
+
+    /* ONLY show virtual keyboard on touch/mobile devices with coarse pointer */
+    @media (pointer: coarse) {
+      .mobile-controls {
+        display: block;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="boot">
+    <div class="boot-inner" id="boot-text"></div>
+    <button id="boot-skip">SKIP [ENTER]</button>
+  </div>
+
+  <div class="crt-scanlines"></div>
+  <div class="crt-vignette"></div>
+  <div class="crt-rgb"></div>
+  <div class="crt-flicker"></div>
+
+  <div id="cursor-trail"></div>
+  <div id="cursor-caret"></div>
+  <div id="cursor-tag"></div>
+
+  <div id="snake-overlay">
+    <button id="snake-close" aria-label="Close game">&#10005;</button>
+    <div class="snake-hud"><span>SCORE: <b id="snake-score">0</b></span><span>HIGH: <b id="snake-high">0</b></span><span
+        style="color:var(--green-dim);">CTRL+Z or ✕ to exit</span></div>
+    <div class="snake-frame"><canvas id="snake-canvas" width="400" height="400"></canvas></div>
+    <div class="snake-msg" id="snake-msg">Press <b>ENTER</b> or <b>SPACE</b> to start — arrow keys / WASD to steer</div>
+    <!-- Virtual Keyboard D-pad for mobile devices -->
+    <div class="mobile-controls" id="snake-mobile-controls">
+      <div class="mobile-grid">
+        <div></div>
+        <button class="m-btn btn-up" id="sm-up" aria-label="Up">▲</button>
+        <div></div>
+        <button class="m-btn btn-left" id="sm-left" aria-label="Left">◀</button>
+        <button class="m-btn btn-action" id="sm-action" aria-label="Start">START</button>
+        <button class="m-btn btn-right" id="sm-right" aria-label="Right">▶</button>
+        <div></div>
+        <button class="m-btn btn-down" id="sm-down" aria-label="Down">▼</button>
+        <div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TOP STATUS BAR ============ -->
+  <div id="top-statusbar">
+    <div class="tsb-left">
+      <span class="tsb-badge">&#9632; SECURE_TUNNEL_ESTABLISHED</span>
+      <span class="tsb-sep">|</span>
+      <span class="tsb-badge sys-ok">&#10003; SYSTEM: OK</span>
+    </div>
+    <div class="tsb-right">
+      <span id="tsb-clock">--:--:-- --- ----/--/--</span>
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-brand" data-scramble>ADEEB<span class="dot">_</span>SYS</div>
+    <button class="nav-toggle" id="nav-toggle">MENU</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="#about" data-nav data-scramble>About</a></li>
+      <li><a href="#skills" data-nav data-scramble>Skills</a></li>
+      <li><a href="#projects" data-nav data-scramble>Case Files</a></li>
+      <li><a href="#terminal" data-nav data-scramble>Terminal</a></li>
+      <li><a href="#training" data-nav data-scramble>Training</a></li>
+      <li><a href="#contact" data-nav data-scramble>Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <section id="hero">
+    <div class="hero-tag"><span class="lb">[</span>SESSION AUTHENTICATED<span class="lb">]</span> —
+      root@adeeb-systems:~$</div>
+    <h1 class="hero-title" id="hero-title">
+      <span class="glitch" data-text="ADEEB" style="color:var(--white);">ADEEB</span><br>
+      <span class="glitch" data-text="_SYSTEMS" style="color:var(--green);">_SYSTEMS</span>
+    </h1>
+    <div id="hero-typed"><span id="hero-typed-text"></span><span class="cursor"></span></div>
+    <div class="hero-ctas">
+      <button class="btn" onclick="document.getElementById('projects').scrollIntoView()">&gt; view_case_files</button>
+      <button class="btn ghost" onclick="document.getElementById('training').scrollIntoView()">&gt;
+        enter_training_range</button>
+      <button class="btn ghost" onclick="document.getElementById('contact').scrollIntoView()">&gt;
+        establish_contact</button>
+    </div>
+    <div class="hero-stats">
+      <div><strong>4</strong>technical cores</div>
+      <div><strong>3</strong>active projects</div>
+      <div><strong>2028</strong>expected graduation</div>
+      <div><strong>IN</strong>Kerala, India</div>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section id="about">
+    <div class="eyebrow">identity verification</div>
+    <h2 class="section-title" data-scramble>About</h2>
+    <div class="panel">
+      <div class="panel-body">
+        <pre class="whoami"><span class="prompt">$</span> whoami --verbose
+
+<span class="k">USER      :</span> <span class="v">Adeeb Ahammed K M</span>
+<span class="k">ROLE      :</span> <span class="v">CSE Undergraduate / Full-Stack &amp; Mobile Developer</span>
+<span class="k">LOCATION  :</span> <span class="v">Tanur, Malappuram, Kerala, India</span>
+<span class="k">EDUCATION :</span> <span class="v">B.Tech CSE — KMCT Institute of Technology (KTU), Exp. 2028</span>
+<span class="k">STACK     :</span> <span class="v">Python · JavaScript · C/C++ · Linux</span>
+<span class="k">LANGUAGES :</span> <span class="v">English (Full) · Malayalam (Native) · Hindi (Proficient)</span>
+<span class="k">SEEKING   :</span> <span class="v">Freelance / Remote roles — application security focus</span>
+<span class="k">STATUS    :</span> <span class="v">ACTIVE</span></pre>
+        <p class="about-blurb" id="about-blurb" style="white-space:pre-wrap; overflow:hidden;">Motivated Computer
+          Science and Engineering undergraduate with hands-on experience in web development, application development,
+          and AI-assisted software design. Proficient in building responsive web applications using Python, JavaScript,
+          HTML, and CSS. Experienced in developing personal projects, leveraging AI tools to improve productivity, and
+          customizing Linux environments. Seeking freelance and remote opportunities to deliver high-quality software
+          solutions while expanding technical expertise.</p>
+        <div class="threat-box">
+          <span class="th-label">ACTIVE SERVICE — CLOUD COMPUTING INTERN</span>
+          Internship Program, Remote, Ongoing. Gaining practical knowledge of cloud computing concepts, deployment
+          methodologies, and cloud-based technologies while building an understanding of modern cloud infrastructure.
+        </div>
+        <div class="tags" style="margin-top:18px;">
+          <span class="tag">Microsoft Certification Programs</span>
+          <span class="tag">Foundation of Coding — Coursera</span>
+          <span class="tag">Full Stack Development Certifications</span>
+          <span class="tag">Additional Programming &amp; Tech Certifications</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SKILLS ============ -->
+  <section id="skills">
+    <div class="eyebrow">nmap -sV --skills adeeb</div>
+    <h2 class="section-title" data-scramble>Scan Results</h2>
+    <div class="panel">
+      <div class="panel-body" id="skills-body">
+
+        <div class="skill-row" data-pct="95">
+          <div class="label"><span>Python — Django / FastAPI / Automation</span></div>
+          <div class="ascii-bar-wrap" id="abar-0"></div>
+        </div>
+
+        <div class="skill-row" data-pct="88">
+          <div class="label"><span>JavaScript — React.js / Node.js / HTML5-CSS3</span></div>
+          <div class="ascii-bar-wrap" id="abar-1"></div>
+        </div>
+
+        <div class="skill-row" data-pct="82">
+          <div class="label"><span>C / C++ — STL / System Programming / Data Structures</span></div>
+          <div class="ascii-bar-wrap" id="abar-2"></div>
+        </div>
+
+        <div class="skill-row" data-pct="92">
+          <div class="label"><span>Linux — Bash / Systems Customization / AI Dev Tools</span></div>
+          <div class="ascii-bar-wrap" id="abar-3"></div>
+        </div>
+
+        <div class="scan-footer" id="scan-footer-txt">SCANNING...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROJECTS ============ -->
+  <section id="projects">
+    <div class="eyebrow">case files — declassified</div>
+    <h2 class="section-title" data-scramble>Projects</h2>
+
+    <div class="projects-grid">
+      <div class="panel case-file">
+        <div class="panel-body">
+          <div class="case-head">
+            <div>
+              <div class="case-id">CASE_FILE // 01 — PROJECT_ALPHA</div>
+              <div class="case-title glow">LOOMI WEBSITE</div>
+            </div>
+            <div class="case-status">SEC_LVL: UNRESTRICTED</div>
+          </div>
+          <p class="case-desc">Designed and developed a responsive website with a modern user interface and payment
+            integration capabilities. Implemented mobile-friendly layouts and optimized usability across multiple
+            devices
+            while utilizing AI-assisted development tools to improve design efficiency and workflow.</p>
+          <div class="tags">
+            <span class="tag">React.js</span>
+            <span class="tag">HTML5 / CSS3</span>
+            <span class="tag">Tailwind</span>
+            <span class="tag">Payments</span>
+          </div>
+          <div style="margin-top:16px;"><a class="btn" href="https://loomi-in.onrender.com" target="_blank"
+              rel="noopener">&gt; access_url</a></div>
+        </div>
+      </div>
+
+      <div class="panel case-file">
+        <div class="panel-body">
+          <div class="case-head">
+            <div>
+              <div class="case-id">CASE_FILE // 02 — MOBILE_EXPANSION</div>
+              <div class="case-title glow">MOBILE APPLICATION</div>
+            </div>
+            <div class="case-status">STATUS: DEVELOPMENT</div>
+          </div>
+          <p class="case-desc">Developing a mobile application with a focus on usability, performance, and user
+            experience. Applying modern software development principles to design and implement application features.
+          </p>
+          <div class="tags">
+            <span class="tag">Mobile</span>
+            <span class="tag">UX / UI</span>
+            <span class="tag">Flutter</span>
+            <span class="tag">Firebase</span>
+          </div>
+          <div style="margin-top:16px;"><a class="btn ghost" href="https://github.com/darkworld1008" target="_blank"
+              rel="noopener">&gt; preview_source</a></div>
+        </div>
+      </div>
+
+      <div class="panel case-file">
+        <div class="panel-body">
+          <div class="case-head">
+            <div>
+              <div class="case-id">CASE_FILE // 03 — KERNEL_LAYER</div>
+              <div class="case-title glow">LINUX CUSTOMIZATION</div>
+            </div>
+            <div class="case-status">STATUS: OPTIMIZED</div>
+          </div>
+          <p class="case-desc">Customized Linux environments and system configurations to improve productivity and
+            enhance
+            user experience. Explored system administration concepts, custom terminal environments, and open-source
+            technologies.</p>
+          <div class="tags">
+            <span class="tag">Bash</span>
+            <span class="tag">Zsh</span>
+            <span class="tag">Linux</span>
+            <span class="tag">AI Tools</span>
+          </div>
+          <div class="clone-cmd"
+            style="margin-top:16px; font-family:var(--font-mono); font-size:11.5px; background:#000; border:1px solid var(--line); padding:10px 14px; color:var(--green); display:inline-block;">
+            $ git clone https://github.com/darkworld1008/dotfiles.git</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OS TERMINOLOGY / TERMINAL ============ -->
+  <section id="terminal">
+    <div class="eyebrow">os terminology — hands-on shell</div>
+    <h2 class="section-title" data-scramble>Terminal</h2>
+    <p style="color:var(--green-dim); font-size:13px; margin-top:-20px; margin-bottom:20px;">A real (simulated) Linux
+      shell. Type <span style="color:var(--amber);">help</span> to see every command, <span
+        style="color:var(--amber);">whoami</span> to pull up my details, or <span
+        style="color:var(--amber);">snake</span> for an old-school break.</p>
+
+    <div class="term-wrap">
+      <div class="term-bar">
+        <div class="term-dots"><span class="d-red"></span><span class="d-yellow"></span><span class="d-green"></span>
+        </div>
+        <div class="term-bar-title">adeeb@systems: ~/portfolio</div>
+        <div class="term-bar-shell">bash 5.2</div>
+      </div>
+      <div class="term-body" id="term-body"></div>
+      <div style="padding:0 14px; color:var(--green-dim); font-size:12.5px;" class="term-tree">┌──(<span
+          class="term-user">adeeb</span><span class="term-at">㉿</span><span class="term-user">systems</span>)-[<span
+          class="term-path">~/portfolio</span>]</div>
+      <div class="term-input-row">
+        <span class="term-prompt">└─$</span>
+        <input id="term-input" type="text" autocomplete="off" spellcheck="false" placeholder="type a command...">
+        <span class="term-input-cursor"></span>
+      </div>
+    </div>
+
+    <div class="cheatsheet">
+      <div class="eyebrow" style="margin-top:22px;">linux command reference — for anyone learning</div>
+      <div class="cheat-grid" id="cheat-grid"></div>
+    </div>
+  </section>
+
+  <!-- ============ TRAINING RANGE / GAMES ============ -->
+  <section id="training">
+    <div class="eyebrow">practical assessment</div>
+    <h2 class="section-title" data-scramble>Training Range</h2>
+    <p style="color:var(--green-dim); font-size:13px; margin-top:-20px; margin-bottom:24px;">Three short exercises.
+      Because a security portfolio should let you actually poke at something.</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="pin">01 · Crack the PIN</button>
+      <button class="tab-btn" data-tab="phish">02 · Phishing Inspector</button>
+      <button class="tab-btn" data-tab="firewall">03 · Firewall Triage</button>
+    </div>
+
+    <!-- GAME 1: PIN CRACKER -->
+    <div class="game-panel active" id="game-pin">
+      <h3>Crack the PIN</h3>
+      <div class="game-sub">A 4-digit PIN is locked behind this terminal. Green = right digit, right position. Amber =
+        right digit, wrong position. Unused attempts get harder to justify.</div>
+      <div class="game-hud"><span>ATTEMPTS: <b id="pin-attempts">0</b></span><span>STATUS: <b
+            id="pin-status">LOCKED</b></span></div>
+      <div class="pin-display" id="pin-display">
+        <div class="pin-slot cold">_</div>
+        <div class="pin-slot cold">_</div>
+        <div class="pin-slot cold">_</div>
+        <div class="pin-slot cold">_</div>
+      </div>
+      <div class="keypad" id="pin-keypad"></div>
+      <div class="feedback info" id="pin-feedback">Enter a 4-digit guess to begin.</div>
+      <div class="attempts-log" id="pin-log"></div>
+      <button class="btn ghost replay-btn" id="pin-reset" style="display:none;">&gt; new_target</button>
+    </div>
+
+    <!-- GAME 2: PHISHING INSPECTOR -->
+    <div class="game-panel" id="game-phish">
+      <h3>Phishing Inspector</h3>
+      <div class="game-sub">Review the message. Decide: legitimate, or phishing?</div>
+      <div class="game-hud"><span>SCORE: <b id="phish-score">0</b>/<span id="phish-total">0</span></span><span>ITEM: <b
+            id="phish-index">1</b>/6</span></div>
+      <div id="phish-card"></div>
+      <div class="verdict-btns">
+        <button class="btn" id="phish-legit">&gt; legitimate</button>
+        <button class="btn" style="border-color:var(--red); color:var(--red);" id="phish-phish">&gt; phishing</button>
+      </div>
+      <div class="feedback" id="phish-feedback"></div>
+      <button class="btn ghost replay-btn" id="phish-reset" style="display:none;">&gt; restart_drill</button>
+    </div>
+
+    <!-- GAME 3: FIREWALL TRIAGE -->
+    <div class="game-panel" id="game-firewall">
+      <h3>Firewall Triage</h3>
+      <div class="game-sub">Incoming connection requests. Allow trusted traffic, block anything that looks wrong.
+        Ruleset shown below.</div>
+      <div class="game-hud">
+        <span>STREAK: <b id="fw-streak">0</b></span>
+        <span>SCORE: <b id="fw-score">0</b>/<span id="fw-total">0</span></span>
+      </div>
+      <div
+        style="font-size:11.5px; color:var(--green-dim); margin-bottom:16px; border:1px solid var(--line); padding:10px;">
+        RULESET — ALLOW: ports 443/80 from known ranges. BLOCK: unencrypted admin ports (23, 3389 external), spoofed
+        internal IPs from external zone, blacklisted ports (4444, 6667).
+      </div>
+      <div id="fw-card"></div>
+      <div class="verdict-btns">
+        <button class="btn" id="fw-allow">&gt; allow</button>
+        <button class="btn" style="border-color:var(--red); color:var(--red);" id="fw-block">&gt; block</button>
+      </div>
+      <div class="feedback" id="fw-feedback"></div>
+      <button class="btn ghost replay-btn" id="fw-reset" style="display:none;">&gt; restart_drill</button>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section id="contact">
+    <div class="eyebrow">open a secure channel</div>
+    <h2 class="section-title" data-scramble>Contact</h2>
+    <div class="panel">
+      <div class="panel-body">
+        <form id="contact-form" class="contact-grid">
+          <div>
+            <label for="cf-name">Name</label>
+            <input id="cf-name" type="text" placeholder="Your name" required>
+            <label for="cf-email">Email</label>
+            <input id="cf-email" type="email" placeholder="you@example.com" required>
+          </div>
+          <div>
+            <label for="cf-msg">Message</label>
+            <textarea id="cf-msg" placeholder="What are we building / hiring for?" required></textarea>
+          </div>
+        </form>
+        <button class="btn" id="cf-submit">&gt; transmit_message</button>
+        <a class="btn ghost" href="cv.pdf" target="_blank" rel="noopener" style="margin-left:12px;">&gt; get_cv.pdf</a>
+        <div class="contact-links">
+          <a href="mailto:adeebahamedkm@gmail.com">EMAIL — adeebahamedkm@gmail.com</a>
+          <a href="tel:+919037340138">PHONE </a>
+          <a href="https://github.com/darkworld1008" target="_blank" rel="noopener">GITHUB — /darkworld1008</a>
+          <a href="https://www.linkedin.com/in/adeeb-ahammed-km-799b0a33b" target="_blank" rel="noopener">LINKEDIN —
+            /adeeb-ahammed-km</a>
+          <a href="https://www.instagram.com/adeeeb____" target="_blank" rel="noopener">INSTAGRAM — ADEEBAHAMMED</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    &gt; SESSION_TERMINATED — thanks for stopping by. // © 2026 ADEEB_SYSTEMS — all rights reserved.
+  </footer>
+
+  <script>
+    /* ============ BOOT SEQUENCE ============ */
+    const bootLines = [
+      "INITIALIZING SECURE SESSION...",
+      "LOADING KERNEL MODULES............ [OK]",
+      "MOUNTING ENCRYPTED VOLUME.......... [OK]",
+      "MOUNTING PORTFOLIO ASSETS.......... [OK]",
+      "VERIFYING IDENTITY: ADEEB.......... [OK]",
+      "ACCESS GRANTED"
+    ];
+    const bootEl = document.getElementById('boot-text');
+    const bootScreen = document.getElementById('boot');
+    let bootDone = false;
+
+    function finishBoot() {
+      if (bootDone) return;
+      bootDone = true;
+      bootScreen.style.opacity = '0';
+      setTimeout(() => { bootScreen.style.display = 'none'; startHeroTyping(); }, 600);
+    }
+
+    async function runBoot() {
+      for (const line of bootLines) {
+        if (bootDone) return;
+        const p = document.createElement('div');
+        bootEl.appendChild(p);
+        for (let i = 0; i < line.length; i++) {
+          if (bootDone) return;
+          p.textContent += line[i];
+          await new Promise(r => setTimeout(r, 12));
+        }
+        await new Promise(r => setTimeout(r, 160));
+      }
+      await new Promise(r => setTimeout(r, 500));
+      finishBoot();
+    }
+    document.getElementById('boot-skip').addEventListener('click', finishBoot);
+    window.addEventListener('keydown', (e) => { if (e.key === 'Enter') finishBoot(); });
+    runBoot();
+
+    /* ============ HERO TYPING ============ */
+    const heroStrings = [
+      "Computer Science undergraduate.",
+      "Full-stack and mobile builder.",
+      "Python · JavaScript · C/C++ · Linux",
+      "Exploring application security."
+    ];
+    function startHeroTyping() {
+      const el = document.getElementById('hero-typed-text');
+      let s = 0, c = 0, deleting = false;
+      function tick() {
+        const str = heroStrings[s];
+        if (!deleting) {
+          c++;
+          el.textContent = str.slice(0, c);
+          if (c === str.length) { deleting = true; setTimeout(tick, 1400); return; }
+        } else {
+          c--;
+          el.textContent = str.slice(0, c);
+          if (c === 0) { deleting = false; s = (s + 1) % heroStrings.length; }
+        }
+        setTimeout(tick, deleting ? 25 : 45);
+      }
+      tick();
+    }
+
+    /* ============ NAV ============ */
+    const navToggle = document.getElementById('nav-toggle');
+    const navLinks = document.getElementById('nav-links');
+    navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+    document.querySelectorAll('[data-nav]').forEach(a => {
+      a.addEventListener('click', () => navLinks.classList.remove('open'));
+    });
+    const sections = document.querySelectorAll('section[id]');
+    const navA = document.querySelectorAll('.nav-links a');
+    const navObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          navA.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+        }
+      });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    sections.forEach(s => navObserver.observe(s));
+
+    /* ============ LIVE CLOCK (top status bar) ============ */
+    (function tickClock() {
+      const el = document.getElementById('tsb-clock');
+      if (el) {
+        const now = new Date();
+        const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        const pad = n => String(n).padStart(2, '0');
+        const yyyy = now.getFullYear();
+        const mm = pad(now.getMonth() + 1);
+        const dd = pad(now.getDate());
+        const hh = pad(now.getHours());
+        const mi = pad(now.getMinutes());
+        const ss = pad(now.getSeconds());
+        const day = days[now.getDay()];
+        el.textContent = `${hh}:${mi}:${ss} ${day} ${yyyy}/${mm}/${dd}`;
+      }
+      setTimeout(tickClock, 1000);
+    })();
+
+    /* ============ ASCII SKILL BARS ============ */
+    const ASCII_TOTAL = 40;  // total bar characters
+    function renderAsciiBar(el, pct, delay) {
+      const filled = Math.round(ASCII_TOTAL * pct / 100);
+      const empty = ASCII_TOTAL - filled;
+      // Animate char by char
+      let drawn = 0;
+      const step = () => {
+        const f = Math.min(drawn, filled);
+        const e = ASCII_TOTAL - drawn;
+        const bar =
+          '<span class="ascii-bar-filled">' + '█'.repeat(f) + '</span>' +
+          (drawn < ASCII_TOTAL ? '<span class="ascii-bar-empty">' + '░'.repeat(drawn < filled ? 0 : empty - (ASCII_TOTAL - drawn)) + '</span>' : '') +
+          '<span class="ascii-bar-empty">' + '░'.repeat(Math.max(0, ASCII_TOTAL - drawn)) + '</span>';
+        el.innerHTML =
+          '[' +
+          '<span class="ascii-bar-filled">' + '█'.repeat(Math.min(drawn, filled)) + '</span>' +
+          '<span class="ascii-bar-empty">' + '░'.repeat(Math.max(0, ASCII_TOTAL - Math.min(drawn, filled))) + '</span>' +
+          '] ' +
+          '<span class="ascii-bar-pct">' + pct + '%</span>';
+        if (drawn < ASCII_TOTAL) { drawn++; setTimeout(step, 28); }
+        else {
+          // final clean render
+          el.innerHTML =
+            '[' +
+            '<span class="ascii-bar-filled">' + '█'.repeat(filled) + '</span>' +
+            '<span class="ascii-bar-empty">' + '░'.repeat(empty) + '</span>' +
+            '] ' +
+            '<span class="ascii-bar-pct">' + pct + '%</span>';
+        }
+      };
+      setTimeout(step, delay || 0);
+    }
+
+    const skillData = [
+      { id: 'abar-0', pct: 95 },
+      { id: 'abar-1', pct: 88 },
+      { id: 'abar-2', pct: 82 },
+      { id: 'abar-3', pct: 92 },
+    ];
+
+    const skillObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          skillData.forEach((s, i) => {
+            const el = document.getElementById(s.id);
+            if (el && !el.dataset.done) {
+              el.dataset.done = '1';
+              renderAsciiBar(el, s.pct, i * 180);
+            }
+          });
+          // Update footer after all bars finish
+          setTimeout(() => {
+            const footer = document.getElementById('scan-footer-txt');
+            if (footer) footer.textContent = 'SCAN COMPLETE — 4 core services detected';
+          }, skillData.length * 180 + ASCII_TOTAL * 28 + 100);
+          skillObserver.disconnect();
+        }
+      });
+    }, { threshold: 0.3 });
+    const skillsSection = document.getElementById('skills');
+    if (skillsSection) skillObserver.observe(skillsSection);
+
+    /* ============ SCROLL REVEAL for panels ============ */
+    document.querySelectorAll('.panel, .case-file').forEach(p => p.classList.add('reveal'));
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) { entry.target.classList.add('visible'); revealObserver.unobserve(entry.target); }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+    /* ============ TYPEWRITER — about blurb ============ */
+    (function () {
+      const blurb = document.getElementById('about-blurb');
+      if (!blurb) return;
+      const fullText = blurb.textContent.trim();
+      blurb.textContent = '';
+      blurb.style.borderRight = '2px solid var(--green)';
+      let i = 0, started = false;
+
+      function typeChar() {
+        if (i < fullText.length) {
+          blurb.textContent += fullText[i++];
+          setTimeout(typeChar, i < 10 ? 0 : 18);
+        } else {
+          blurb.style.borderRight = 'none';
+        }
+      }
+
+      const twObs = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !started) {
+          started = true;
+          typeChar();
+          twObs.disconnect();
+        }
+      }, { threshold: 0.3 });
+      twObs.observe(blurb);
+    })();
+
+    /* ============ TABS ============ */
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.game-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('game-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    /* ============ TERMINAL CARET CURSOR ============ */
+    (function () {
+      if (window.matchMedia('(pointer:coarse)').matches) return;
+      const caret = document.getElementById('cursor-caret');
+      const trail = document.getElementById('cursor-trail');
+      const tag = document.getElementById('cursor-tag');
+      let mx = -100, my = -100, tx = -100, ty = -100, hovered = false;
+      window.addEventListener('mousemove', (e) => {
+        mx = e.clientX; my = e.clientY;
+        caret.style.left = mx + 'px'; caret.style.top = my + 'px';
+        const t = e.target;
+        const clickable = t.closest ? t.closest('a, button, input, textarea, .clickable') : null;
+        hovered = !!clickable;
+        caret.classList.toggle('hover', hovered);
+        if (hovered) {
+          let type = 'TARGET';
+          if (clickable.tagName === 'BUTTON') type = 'EXEC';
+          else if (clickable.tagName === 'A') type = 'LINK';
+          else if (clickable.tagName === 'INPUT' || clickable.tagName === 'TEXTAREA') type = 'INPUT';
+          tag.textContent = '[ ' + type + ' ]';
+          tag.style.opacity = '1';
+          tag.style.left = (mx + 20) + 'px';
+          tag.style.top = (my - 8) + 'px';
+        } else {
+          tag.style.opacity = '0';
+        }
+      });
+      function loop() {
+        tx += (mx - tx) * 0.28; ty += (my - ty) * 0.28;
+        trail.style.left = tx + 'px'; trail.style.top = ty + 'px';
+        trail.style.opacity = hovered ? '0' : '0.7';
+        requestAnimationFrame(loop);
+      }
+      loop();
+    })();
+
+    /* ============ OS TERMINOLOGY / LINUX TERMINAL SIMULATOR ============ */
+    (function () {
+      const body = document.getElementById('term-body');
+      const input = document.getElementById('term-input');
+      const cmdHistory = [];
+      let historyIdx = -1;
+      let busy = false;
+
+      const manPages = {
+        whoami: "whoami — print the effective username of the current user.",
+        pwd: "pwd — print the full pathname of the current working directory.",
+        ls: "ls [dir] — list the files and directories inside a directory.",
+        cd: "cd [dir] — change the shell's current working directory.",
+        cat: "cat [file] — concatenate and print the contents of a file.",
+        cp: "cp src dest — copy files or directories from one location to another.",
+        mv: "mv src dest — move or rename a file or directory.",
+        rm: "rm [file] — remove (delete) files. Use -r for directories. Irreversible.",
+        mkdir: "mkdir [dir] — create a new, empty directory.",
+        chmod: "chmod [mode] [file] — change the read/write/execute permissions of a file.",
+        grep: "grep [pattern] [file] — search text for lines matching a pattern.",
+        sudo: "sudo [cmd] — run a command with superuser (root) privileges.",
+        ssh: "ssh user@host — open a secure encrypted shell session on a remote machine.",
+        ps: "ps — report a snapshot of the currently running processes.",
+        top: "top — display running processes in real time, sorted by resource usage.",
+        man: "man [cmd] — display the manual page explaining what a command does."
+      };
+
+      const helpEntries = [
+        ['whoami', 'show operator identity and details'],
+        ['pwd', 'show current working directory'],
+        ['ls', 'list portfolio sections'],
+        ['cd <section>', 'jump to a section (about, skills, projects, terminal, training, contact)'],
+        ['cat <file>', 'print a file — try: cat about.txt, cat skills.json'],
+        ['man <cmd>', 'show what a real Linux command does'],
+        ['history', 'show commands you have run'],
+        ['neofetch', 'show a system summary'],
+        ['snake', 'launch a classic Snake game'],
+        ['clear', 'clear the terminal']
+      ];
+
+      const dirs = {
+        about: 'ABOUT — bio, education, languages',
+        skills: 'SCAN_RESULTS — Python, JavaScript, C/C++, Linux',
+        projects: 'CASE_FILES — Loomi, Mobile App, Linux Customization',
+        terminal: 'TERMINAL — you are here',
+        training: 'TRAINING_RANGE — 3 security exercises',
+        contact: 'CONTACT — email, phone, socials'
+      };
+
+      function print(text, cls) {
+        const line = document.createElement('div');
+        line.className = 'term-line ' + (cls || 'out');
+        line.textContent = text;
+        body.appendChild(line);
+        body.scrollTop = body.scrollHeight;
+        return line;
+      }
+      function printCmd(text) { print('└─$ ' + text, 'cmd'); }
+
+      function typeLines(lines, delay) {
+        return new Promise((resolve) => {
+          let i = 0;
+          function next() {
+            if (i >= lines.length) { resolve(); return; }
+            print(lines[i][0], lines[i][1]);
+            i++;
+            setTimeout(next, delay);
+          }
+          next();
+        });
+      }
+
+      async function run(raw) {
+        const trimmed = raw.trim();
+        printCmd(raw);
+        if (trimmed !== '') { cmdHistory.push(trimmed); }
+        historyIdx = cmdHistory.length;
+        if (trimmed === '') { return; }
+        const parts = trimmed.split(/\s+/);
+        const cmd = parts[0].toLowerCase();
+        const arg = parts.slice(1).join(' ');
+
+        switch (cmd) {
+          case 'help':
+            busy = true;
+            print('Available commands — typing them out for you:', 'info');
+            for (const [name, desc] of helpEntries) {
+              await new Promise(r => setTimeout(r, 160));
+              print('  ' + name.padEnd(16, ' ') + desc, 'out');
+            }
+            busy = false;
+            break;
+
+          case 'whoami':
+            await typeLines([
+              ['adeeb', 'out'],
+              ['  NAME     : Adeeb Ahammed K M', 'out'],
+              ['  ROLE     : CSE Undergraduate / Full-Stack & Mobile Developer', 'out'],
+              ['  LOCATION : Tanur, Malappuram, Kerala, India', 'out'],
+              ['  EDUCATION: B.Tech CSE — KMCT Institute of Technology (KTU), CGPA 7.0/10', 'out'],
+              ['  STACK    : Python · JavaScript · C/C++ · Linux', 'out'],
+              ['  STATUS   : Seeking freelance, remote & security-adjacent roles', 'out']
+            ], 90);
+            break;
+
+          case 'pwd':
+            print('/home/adeeb/portfolio', 'out');
+            print('  -> matches: about/  skills/  projects/  terminal/  training/  contact/', 'info');
+            break;
+
+          case 'ls':
+            Object.keys(dirs).forEach(d => print(d + '/', 'out'));
+            break;
+
+          case 'cd':
+            if (!arg) { print('cd: missing operand. Try: cd projects', 'err'); break; }
+            const target = arg.toLowerCase();
+            if (dirs[target]) {
+              print('-> ' + dirs[target], 'info');
+              const el = document.getElementById(target);
+              if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 250);
+            } else {
+              print('cd: no such section: ' + arg, 'err');
+            }
+            break;
+
+          case 'cat':
+            if (arg === 'about.txt') {
+              print('CSE undergraduate building web, mobile and AI-assisted software. Exploring application security.', 'out');
+            } else if (arg === 'skills.json') {
+              print('{ "python":95, "javascript":88, "c_cpp":82, "linux":92 }', 'out');
+            } else if (!arg) {
+              print('cat: missing file operand', 'err');
+            } else {
+              print('cat: ' + arg + ': No such file or directory', 'err');
+            }
+            break;
+
+          case 'man':
+            if (!arg) { print('What manual page do you want? Try: man ls', 'err'); break; }
+            const page = manPages[arg.toLowerCase()];
+            print(page ? page : ('No manual entry for ' + arg), page ? 'out' : 'err');
+            break;
+
+          case 'history':
+            if (cmdHistory.length === 0) { print('(empty)', 'info'); break; }
+            cmdHistory.forEach((c, i) => print((i + 1) + '  ' + c, 'out'));
+            break;
+
+          case 'neofetch':
+            await typeLines([
+              ['adeeb@systems', 'out'],
+              ['--------------', 'out'],
+              ['OS: PortfolioOS x86_64', 'out'],
+              ['Shell: zsh 5.9', 'out'],
+              ['Focus: Web, Mobile, AppSec', 'out'],
+              ['Uptime: since ' + new Date().getFullYear(), 'out']
+            ], 90);
+            break;
+
+          case 'snake':
+            print('Launching SNAKE_OS...', 'info');
+            openSnake();
+            break;
+
+          case 'sudo':
+            print('adeeb is not in the sudoers file. This incident will be reported (jokingly).', 'err');
+            break;
+
+          case 'clear':
+            body.innerHTML = '';
+            break;
+
+          case 'date':
+            print(new Date().toString(), 'out');
+            break;
+
+          case 'echo':
+            print(arg, 'out');
+            break;
+
+          default:
+            print(cmd + ': command not found. Type "help" for a list of commands.', 'err');
+        }
+      }
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          if (busy) return;
+          run(input.value);
+          input.value = '';
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (historyIdx > 0) { historyIdx--; input.value = cmdHistory[historyIdx] || ''; }
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (historyIdx < cmdHistory.length - 1) { historyIdx++; input.value = cmdHistory[historyIdx] || ''; }
+          else { historyIdx = cmdHistory.length; input.value = ''; }
+        }
+      });
+      document.querySelector('.term-wrap').addEventListener('click', () => input.focus());
+
+      print('Welcome, operator. Type "help" to see the full command list.', 'info');
+
+      const cheatGrid = document.getElementById('cheat-grid');
+      Object.keys(manPages).forEach(cmd => {
+        const parts = manPages[cmd].split(' — ');
+        const div = document.createElement('div');
+        div.className = 'cheat-item';
+        const code = document.createElement('code');
+        code.textContent = cmd;
+        const p = document.createElement('p');
+        p.textContent = parts[1] || '';
+        div.appendChild(code);
+        div.appendChild(p);
+        cheatGrid.appendChild(div);
+      });
+    })();
+
+    /* ============ SNAKE GAME (triggered by typing "snake") ============ */
+    let openSnake;
+    (function () {
+      const overlay = document.getElementById('snake-overlay');
+      const canvas = document.getElementById('snake-canvas');
+      const ctx = canvas.getContext('2d');
+      const scoreEl = document.getElementById('snake-score');
+      const highEl = document.getElementById('snake-high');
+      const msgEl = document.getElementById('snake-msg');
+      const GRID = 20, CELL = 20;
+      let snake, dir, nextDir, food, score = 0, high = 0, state = 'START', loopId = null;
+
+      const btnAction = document.getElementById('sm-action');
+      function updateActionBtn() {
+        if (!btnAction) return;
+        if (state === 'PLAYING') {
+          btnAction.textContent = 'RESET';
+        } else if (state === 'GAMEOVER') {
+          btnAction.textContent = 'RETRY';
+        } else {
+          btnAction.textContent = 'START';
+        }
+      }
+
+      function reset() {
+        snake = [{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }];
+        dir = 'UP'; nextDir = 'UP';
+        food = randomFood();
+        score = 0; scoreEl.textContent = '0';
+        state = 'PLAYING';
+        msgEl.innerHTML = 'Arrow keys / WASD to steer — <b>CTRL+Z</b> to exit';
+        updateActionBtn();
+      }
+      function randomFood() {
+        let f, onSnake = true;
+        while (onSnake) {
+          f = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) };
+          onSnake = snake.some(s => s.x === f.x && s.y === f.y);
+        }
+        return f;
+      }
+      function draw() {
+        ctx.fillStyle = '#010401';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = 'rgba(61,255,138,0.06)';
+        for (let i = 0; i <= GRID; i++) {
+          ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, canvas.height); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(canvas.width, i * CELL); ctx.stroke();
+        }
+        ctx.fillStyle = '#ff3b5c';
+        ctx.fillRect(food.x * CELL + 2, food.y * CELL + 2, CELL - 4, CELL - 4);
+        snake.forEach((s, i) => {
+          ctx.fillStyle = i === 0 ? '#daffe8' : '#3dff8a';
+          ctx.fillRect(s.x * CELL + 1, s.y * CELL + 1, CELL - 2, CELL - 2);
+        });
+        if (state === 'START') {
+          ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = '#3dff8a'; ctx.font = '20px monospace'; ctx.textAlign = 'center';
+          ctx.fillText('SNAKE_OS', canvas.width / 2, canvas.height / 2);
+        } else if (state === 'GAMEOVER') {
+          ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = '#ff3b5c'; ctx.font = '20px monospace'; ctx.textAlign = 'center';
+          ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 10);
+          ctx.fillStyle = '#ffb627'; ctx.font = '12px monospace';
+          ctx.fillText('score: ' + score, canvas.width / 2, canvas.height / 2 + 14);
+        }
+      }
+      function tick() {
+        if (state !== 'PLAYING') return;
+        dir = nextDir;
+        const head = { ...snake[0] };
+        if (dir === 'UP') head.y--; if (dir === 'DOWN') head.y++;
+        if (dir === 'LEFT') head.x--; if (dir === 'RIGHT') head.x++;
+        if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID || snake.some(s => s.x === head.x && s.y === head.y)) {
+          state = 'GAMEOVER';
+          if (score > high) { high = score; highEl.textContent = high; }
+          msgEl.innerHTML = 'Press <b>ENTER</b> to try again — <b>CTRL+Z</b> to exit';
+          draw();
+          updateActionBtn();
+          return;
+        }
+        snake.unshift(head);
+        if (head.x === food.x && head.y === food.y) {
+          score++; scoreEl.textContent = score;
+          food = randomFood();
+        } else {
+          snake.pop();
+        }
+        draw();
+      }
+      function steer(d) {
+        if (d === 'UP' && dir !== 'DOWN') nextDir = 'UP';
+        if (d === 'DOWN' && dir !== 'UP') nextDir = 'DOWN';
+        if (d === 'LEFT' && dir !== 'RIGHT') nextDir = 'LEFT';
+        if (d === 'RIGHT' && dir !== 'LEFT') nextDir = 'RIGHT';
+      }
+      function closeGame() {
+        overlay.classList.remove('active');
+        if (loopId) { clearInterval(loopId); loopId = null; }
+        document.getElementById('term-input').focus();
+      }
+      window.addEventListener('keydown', (e) => {
+        if (!overlay.classList.contains('active')) return;
+        if (e.key === 'Escape') { e.preventDefault(); closeGame(); return; }
+        if (e.ctrlKey && e.key.toLowerCase() === 'z') { e.preventDefault(); closeGame(); return; }
+        if (state !== 'PLAYING') {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); reset(); draw(); }
+          return;
+        }
+        switch (e.key) {
+          case 'ArrowUp': case 'w': case 'W': e.preventDefault(); steer('UP'); break;
+          case 'ArrowDown': case 's': case 'S': e.preventDefault(); steer('DOWN'); break;
+          case 'ArrowLeft': case 'a': case 'A': e.preventDefault(); steer('LEFT'); break;
+          case 'ArrowRight': case 'd': case 'D': e.preventDefault(); steer('RIGHT'); break;
+        }
+      });
+      document.getElementById('snake-close').addEventListener('click', closeGame);
+
+      // Virtual D-pad controls for mobile Devices
+      const btnUp = document.getElementById('sm-up');
+      const btnDown = document.getElementById('sm-down');
+      const btnLeft = document.getElementById('sm-left');
+      const btnRight = document.getElementById('sm-right');
+
+      btnUp.addEventListener('click', (e) => { e.preventDefault(); if (state === 'PLAYING') steer('UP'); });
+      btnDown.addEventListener('click', (e) => { e.preventDefault(); if (state === 'PLAYING') steer('DOWN'); });
+      btnLeft.addEventListener('click', (e) => { e.preventDefault(); if (state === 'PLAYING') steer('LEFT'); });
+      btnRight.addEventListener('click', (e) => { e.preventDefault(); if (state === 'PLAYING') steer('RIGHT'); });
+      btnAction.addEventListener('click', (e) => {
+        e.preventDefault();
+        reset();
+        draw();
+      });
+
+      openSnake = function () {
+        overlay.classList.add('active');
+        snake = [{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }];
+        dir = 'UP'; nextDir = 'UP';
+        food = randomFood();
+        state = 'START'; scoreEl.textContent = '0'; highEl.textContent = high;
+        msgEl.innerHTML = 'Press <b>ENTER</b> or <b>SPACE</b> or tap <b>START</b> to start — arrow keys / WASD to steer';
+        draw();
+        updateActionBtn();
+        if (loopId) clearInterval(loopId);
+        loopId = setInterval(tick, 110);
+      };
+    })();
+
+    /* ============ GAME 1: CRACK THE PIN ============ */
+    (function () {
+      let target = [];
+      let guess = [];
+      let attempts = 0;
+      let won = false;
+      const slots = document.querySelectorAll('#pin-display .pin-slot');
+      const feedback = document.getElementById('pin-feedback');
+      const attemptsEl = document.getElementById('pin-attempts');
+      const statusEl = document.getElementById('pin-status');
+      const log = document.getElementById('pin-log');
+      const keypad = document.getElementById('pin-keypad');
+      const resetBtn = document.getElementById('pin-reset');
+
+      function newTarget() {
+        target = Array.from({ length: 4 }, () => Math.floor(Math.random() * 10));
+        guess = [];
+        attempts = 0;
+        won = false;
+        attemptsEl.textContent = '0';
+        statusEl.textContent = 'LOCKED';
+        statusEl.style.color = 'var(--red)';
+        log.innerHTML = '';
+        feedback.className = 'feedback info';
+        feedback.textContent = 'Enter a 4-digit guess to begin.';
+        resetBtn.style.display = 'none';
+        updateSlots();
+      }
+
+      function updateSlots() {
+        slots.forEach((s, i) => {
+          s.textContent = guess[i] !== undefined ? guess[i] : '_';
+          s.className = 'pin-slot cold';
+        });
+      }
+
+      function buildKeypad() {
+        keypad.innerHTML = '';
+        for (let i = 0; i <= 9; i++) {
+          const b = document.createElement('button');
+          b.textContent = i;
+          b.addEventListener('click', () => {
+            if (won || guess.length >= 4) return;
+            guess.push(i);
+            updateSlots();
+            if (guess.length === 4) submitGuess();
+          });
+          keypad.appendChild(b);
+        }
+        const del = document.createElement('button');
+        del.textContent = 'DEL';
+        del.style.gridColumn = 'span 3';
+        del.addEventListener('click', () => { if (!won) { guess.pop(); updateSlots(); } });
+        keypad.appendChild(del);
+      }
+
+      function submitGuess() {
+        attempts++;
+        attemptsEl.textContent = attempts;
+        let exact = 0, present = 0;
+        const targetCopy = [...target];
+        const guessCopy = [...guess];
+        const marks = [null, null, null, null];
+        for (let i = 0; i < 4; i++) {
+          if (guessCopy[i] === targetCopy[i]) { marks[i] = 'hot'; exact++; targetCopy[i] = null; guessCopy[i] = null; }
+        }
+        for (let i = 0; i < 4; i++) {
+          if (guessCopy[i] !== null) {
+            const idx = targetCopy.indexOf(guessCopy[i]);
+            if (idx !== -1) { marks[i] = 'warm'; present++; targetCopy[idx] = null; }
+            else marks[i] = 'cold';
+          }
+        }
+        slots.forEach((s, i) => { s.className = 'pin-slot ' + (marks[i] || 'cold'); });
+
+        const entry = document.createElement('div');
+        entry.textContent = `#${attempts}  ${guess.join('')}  →  ${exact} exact, ${present} misplaced`;
+        log.prepend(entry);
+
+        if (exact === 4) {
+          won = true;
+          statusEl.textContent = 'CRACKED';
+          statusEl.style.color = 'var(--green)';
+          feedback.className = 'feedback ok';
+          feedback.textContent = `Access granted in ${attempts} attempt${attempts === 1 ? '' : 's'}. In the real world, that's why 4-digit PINs alone don't cut it — rate-limiting and lockouts matter.`;
+          resetBtn.style.display = 'inline-block';
+        } else {
+          feedback.className = 'feedback info';
+          feedback.textContent = 'Green = correct digit & position. Amber = correct digit, wrong position.';
+          guess = [];
+          setTimeout(updateSlots, 900);
+        }
+      }
+
+      resetBtn.addEventListener('click', newTarget);
+      buildKeypad();
+      newTarget();
+    })();
+
+    /* ============ GAME 2: PHISHING INSPECTOR ============ */
+    (function () {
+      const emails = [
+        { from: 'IT-Support@paypa1-secure.com', subject: 'Your account will be suspended in 24 hours', body: 'We detected unusual activity. Click the link below within 24 hours to verify your identity or your account will be permanently locked.', phishing: true, why: 'Lookalike domain ("paypa1" with a digit 1) and urgency-based pressure are classic phishing signals.' },
+        { from: 'notifications@github.com', subject: '[GitHub] A new SSH key was added to your account', body: 'A new SSH key was added to your account. If this was you, no action is needed. If not, please review your security settings.', phishing: false, why: 'Legitimate sender domain, no urgent action demanded, describes a real security event and offers a calm next step.' },
+        { from: 'billing@amaz0n-orders.net', subject: 'Invoice #88213 — Payment Failed, Update Now', body: 'Your recent order payment failed. Update your payment method immediately using the secure portal linked below to avoid order cancellation.', phishing: true, why: 'Misspelled domain ("amaz0n") and a fake unpaid-invoice hook designed to make you click without checking the sender.' },
+        { from: 'no-reply@accounts.google.com', subject: 'Security alert: new sign-in on Windows', body: 'We noticed a new sign-in to your Google Account on a Windows device. If this was you, no action is needed.', phishing: false, why: 'Genuine Google sender domain, informational tone, no link pressure or countdown.' },
+        { from: 'ceo.office@company-hr-payroll.info', subject: 'URGENT: Confidential wage transfer needed today', body: 'I need you to process a wire transfer today, keep this confidential, do not discuss with anyone else in the office. Reply with your availability.', phishing: true, why: 'Classic "CEO fraud" — urgency, secrecy, unusual payment request, and a domain unrelated to the real company.' },
+        { from: 'team@slack.com', subject: 'Your weekly workspace activity summary', body: 'Here is a summary of activity in your workspace this week: 42 messages, 3 new members, 1 channel created.', phishing: false, why: 'Routine automated digest, legitimate domain, nothing being requested of you.' }
+      ];
+      let idx = 0, score = 0, answered = false;
+      const shuffled = [...emails].sort(() => Math.random() - 0.5);
+      const card = document.getElementById('phish-card');
+      const scoreEl = document.getElementById('phish-score');
+      const totalEl = document.getElementById('phish-total');
+      const idxEl = document.getElementById('phish-index');
+      const feedback = document.getElementById('phish-feedback');
+      const resetBtn = document.getElementById('phish-reset');
+      const btnLegit = document.getElementById('phish-legit');
+      const btnPhish = document.getElementById('phish-phish');
+      totalEl.textContent = shuffled.length;
+
+      function render() {
+        if (idx >= shuffled.length) {
+          card.innerHTML = `<div class="feedback ok" style="font-size:16px;">Drill complete: ${score}/${shuffled.length} correct.</div>`;
+          idxEl.textContent = shuffled.length;
+          btnLegit.style.display = 'none'; btnPhish.style.display = 'none';
+          resetBtn.style.display = 'inline-block';
+          feedback.textContent = '';
+          return;
+        }
+        const e = shuffled[idx];
+        idxEl.textContent = idx + 1;
+        answered = false;
+        feedback.textContent = '';
+        feedback.className = 'feedback';
+        card.innerHTML = `<div class="email-card">
+      <div class="ef"><span class="k">From:</span><span class="v">${e.from}</span></div>
+      <div class="ef"><span class="k">Subject:</span><span class="v">${e.subject}</span></div>
+      <div class="email-body">${e.body}</div>
+    </div>`;
+      }
+
+      function answer(choice) {
+        if (answered) return;
+        answered = true;
+        const e = shuffled[idx];
+        const correct = choice === e.phishing;
+        if (correct) score++;
+        scoreEl.textContent = score;
+        feedback.className = 'feedback ' + (correct ? 'ok' : 'bad');
+        feedback.textContent = (correct ? 'Correct. ' : 'Not quite. ') + e.why;
+        idx++;
+        setTimeout(render, 1900);
+      }
+
+      btnLegit.addEventListener('click', () => answer(false));
+      btnPhish.addEventListener('click', () => answer(true));
+      resetBtn.addEventListener('click', () => {
+        idx = 0; score = 0; scoreEl.textContent = '0';
+        btnLegit.style.display = 'inline-block'; btnPhish.style.display = 'inline-block';
+        resetBtn.style.display = 'none';
+        shuffled.sort(() => Math.random() - 0.5);
+        render();
+      });
+      render();
+    })();
+
+    /* ============ GAME 3: FIREWALL TRIAGE ============ */
+    (function () {
+      const packets = [
+        { src: '203.0.113.44', port: '443', proto: 'HTTPS', zone: 'External', note: 'Standard encrypted web traffic', allow: true },
+        { src: '10.0.0.15', port: '3389', proto: 'RDP', zone: 'External', note: 'Remote desktop request from outside the network', allow: false },
+        { src: '198.51.100.9', port: '80', proto: 'HTTP', zone: 'External', note: 'Plain web request to public site', allow: true },
+        { src: '10.0.0.7', port: '22', proto: 'SSH', zone: 'Internal', note: 'Admin SSH from known internal host', allow: true },
+        { src: '192.0.2.88', port: '23', proto: 'Telnet', zone: 'External', note: 'Unencrypted remote login attempt from outside', allow: false },
+        { src: '203.0.113.201', port: '6667', proto: 'IRC', zone: 'External', note: 'Traffic on a known botnet C2 port', allow: false },
+        { src: '10.0.0.22', port: '443', proto: 'HTTPS', zone: 'Internal', note: 'Internal service calling out over HTTPS', allow: true },
+        { src: '10.0.0.5', port: '4444', proto: 'TCP', zone: 'Internal', note: 'Traffic on a common reverse-shell port', allow: false }
+      ];
+      let idx = 0, score = 0, streak = 0, answered = false;
+      const shuffled = [...packets].sort(() => Math.random() - 0.5);
+      const card = document.getElementById('fw-card');
+      const scoreEl = document.getElementById('fw-score');
+      const totalEl = document.getElementById('fw-total');
+      const streakEl = document.getElementById('fw-streak');
+      const feedback = document.getElementById('fw-feedback');
+      const resetBtn = document.getElementById('fw-reset');
+      const btnAllow = document.getElementById('fw-allow');
+      const btnBlock = document.getElementById('fw-block');
+      totalEl.textContent = shuffled.length;
+
+      function render() {
+        if (idx >= shuffled.length) {
+          card.innerHTML = `<div class="feedback ok" style="font-size:16px;">Drill complete: ${score}/${shuffled.length} correct. Best streak this run: track it next time.</div>`;
+          btnAllow.style.display = 'none'; btnBlock.style.display = 'none';
+          resetBtn.style.display = 'inline-block';
+          feedback.textContent = '';
+          return;
+        }
+        const p = shuffled[idx];
+        answered = false;
+        feedback.textContent = '';
+        feedback.className = 'feedback';
+        card.innerHTML = `<div class="packet-card">
+      <div class="pf"><span>SOURCE</span><b>${p.src}</b></div>
+      <div class="pf"><span>PORT / PROTOCOL</span><b>${p.port} / ${p.proto}</b></div>
+      <div class="pf"><span>ZONE</span><b>${p.zone}</b></div>
+      <div class="pf" style="margin-top:8px;"><span>NOTE</span><b>${p.note}</b></div>
+    </div>`;
+      }
+
+      function answer(choice) {
+        if (answered) return;
+        answered = true;
+        const p = shuffled[idx];
+        const correct = choice === p.allow;
+        if (correct) { score++; streak++; } else { streak = 0; }
+        scoreEl.textContent = score;
+        streakEl.textContent = streak;
+        feedback.className = 'feedback ' + (correct ? 'ok' : 'bad');
+        feedback.textContent = correct
+          ? (p.allow ? 'Correct — allowed. Traffic matches expected pattern.' : 'Correct — blocked. Good catch.')
+          : (p.allow ? 'Incorrect — this was legitimate traffic, blocking it breaks something real.' : 'Incorrect — this should have been blocked.');
+        idx++;
+        setTimeout(render, 1600);
+      }
+
+      btnAllow.addEventListener('click', () => answer(true));
+      btnBlock.addEventListener('click', () => answer(false));
+      resetBtn.addEventListener('click', () => {
+        idx = 0; score = 0; streak = 0;
+        scoreEl.textContent = '0'; streakEl.textContent = '0';
+        btnAllow.style.display = 'inline-block'; btnBlock.style.display = 'inline-block';
+        resetBtn.style.display = 'none';
+        shuffled.sort(() => Math.random() - 0.5);
+        render();
+      });
+      render();
+    })();
+
+    /* ============ CONTACT FORM ============ */
+
+    // ── EmailJS Configuration ──────────────────────────────────────────────
+    // Replace the three placeholders below with your real EmailJS credentials.
+    // Sign up at https://www.emailjs.com (free tier allows 200 emails/month).
+    //   1. PUBLIC_KEY  → Account › General › Public Key
+    //   2. SERVICE_ID  → Email Services › your Gmail service ID  (e.g. "service_xxxxxxx")
+    //   3. TEMPLATE_ID → Email Templates › your template ID       (e.g. "template_xxxxxxx")
+    //
+    // Template must contain these variables: {{from_name}}, {{from_email}}, {{message}}
+    // ─────────────────────────────────────────────────────────────────────────
+    const EMAILJS_PUBLIC_KEY = 'YOUR_PUBLIC_KEY';   // ← replace
+    const EMAILJS_SERVICE_ID = 'YOUR_SERVICE_ID';   // ← replace
+    const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';  // ← replace
+
+    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+    const cfSubmit = document.getElementById('cf-submit');
+    cfSubmit.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('cf-name').value.trim();
+      const email = document.getElementById('cf-email').value.trim();
+      const msg = document.getElementById('cf-msg').value.trim();
+
+      if (!name || !email || !msg) {
+        alert('Fill in all fields before transmitting.');
+        return;
+      }
+
+      // Loading state
+      const originalText = cfSubmit.innerHTML;
+      cfSubmit.innerHTML = '> transmitting...';
+      cfSubmit.disabled = true;
+      cfSubmit.style.opacity = '0.7';
+
+      // Remove any previous status message
+      const oldStatus = document.getElementById('cf-status');
+      if (oldStatus) oldStatus.remove();
+
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          from_name: name,
+          from_email: email,
+          message: msg,
+          to_email: 'adeebahamedkm@gmail.com'
+        });
+
+        // Success
+        const status = document.createElement('p');
+        status.id = 'cf-status';
+        status.style.cssText = 'color:var(--green);margin-top:12px;font-size:.85rem;letter-spacing:.05em;';
+        status.textContent = '✔ MESSAGE TRANSMITTED — I\'ll get back to you soon.';
+        cfSubmit.insertAdjacentElement('afterend', status);
+
+        // Clear form
+        document.getElementById('cf-name').value = '';
+        document.getElementById('cf-email').value = '';
+        document.getElementById('cf-msg').value = '';
+
+      } catch (err) {
+        const status = document.createElement('p');
+        status.id = 'cf-status';
+        status.style.cssText = 'color:var(--red);margin-top:12px;font-size:.85rem;letter-spacing:.05em;';
+        status.textContent = '✖ TRANSMISSION FAILED — please try again or email directly.';
+        cfSubmit.insertAdjacentElement('afterend', status);
+        console.error('EmailJS error:', err);
+      } finally {
+        cfSubmit.innerHTML = originalText;
+        cfSubmit.disabled = false;
+        cfSubmit.style.opacity = '1';
+      }
+    });
+
+    /* ============ SCRAMBLE TEXT EFFECT ============ */
+    (function () {
+      const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%!?><{}[]~^*+=;';
+      const rand = () => CHARS[Math.floor(Math.random() * CHARS.length)];
+
+      function scramble(el) {
+        // For nav-brand, only scramble the direct text (skip child span)
+        const isNavBrand = el.classList.contains('nav-brand');
+        let original;
+        if (isNavBrand) {
+          original = 'ADEEBSYS';   // visual letters only (dot handled separately)
+        } else {
+          original = el.dataset.orig || el.textContent.trim();
+          el.dataset.orig = original;
+        }
+
+        if (el._scrambleRunning) return;
+        el._scrambleRunning = true;
+
+        let iteration = 0;
+        const length = original.length;
+        const speed = 35;   // ms per frame
+        const revealPerFrame = 1; // letters revealed per step
+
+        const timer = setInterval(() => {
+          const revealed = Math.floor(iteration / 2);
+          const display = original
+            .split('')
+            .map((ch, i) => {
+              if (ch === ' ') return ' ';
+              if (i < revealed) return ch;      // already locked in
+              return rand();                     // still scrambling
+            })
+            .join('');
+
+          if (isNavBrand) {
+            // rebuild inner HTML keeping the blinking dot span
+            el.innerHTML =
+              display.slice(0, 5) +
+              '<span class="dot">_</span>' +
+              display.slice(5);
+          } else {
+            el.textContent = display;
+          }
+
+          iteration++;
+          if (revealed >= length) {
+            clearInterval(timer);
+            if (isNavBrand) {
+              el.innerHTML = 'ADEEB<span class="dot">_</span>SYS';
+            } else {
+              el.textContent = original;
+            }
+            el._scrambleRunning = false;
+          }
+        }, speed);
+      }
+
+      document.querySelectorAll('[data-scramble]').forEach(el => {
+        if (!el.classList.contains('nav-brand')) {
+          el.dataset.orig = el.textContent.trim();
+        }
+        el.addEventListener('mouseenter', () => scramble(el));
+      });
+    })();
+
+    /* ============ GLITCH BURST TRIGGER ============ */
+    (function () {
+      const glitches = document.querySelectorAll('.glitch');
+      function burst() {
+        glitches.forEach(el => {
+          el.classList.add('glitch-active');
+          setTimeout(() => el.classList.remove('glitch-active'), 200);
+        });
+        // randomise next burst: every 3.5 – 9 s
+        setTimeout(burst, 3500 + Math.random() * 5500);
+      }
+      setTimeout(burst, 1800);
+    })();
+
+  </script>
+</body>
+
+</html>
