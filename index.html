@@ -1851,6 +1851,20 @@
         style="color:var(--green-dim);">CTRL+Z or ✕ to exit</span></div>
     <div class="snake-frame"><canvas id="snake-canvas" width="400" height="400"></canvas></div>
     <div class="snake-msg" id="snake-msg">Press <b>ENTER</b> or <b>SPACE</b> to start — arrow keys / WASD to steer</div>
+    <!-- Virtual D-pad for mobile — only visible on touch devices, inside overlay -->
+    <div class="mobile-controls" id="snake-mobile-controls">
+      <div class="mobile-grid">
+        <div></div>
+        <button class="m-btn btn-up"     id="sm-up"     aria-label="Up">▲</button>
+        <div></div>
+        <button class="m-btn btn-left"   id="sm-left"   aria-label="Left">◀</button>
+        <button class="m-btn btn-action" id="sm-action" aria-label="Start">START</button>
+        <button class="m-btn btn-right"  id="sm-right"  aria-label="Right">▶</button>
+        <div></div>
+        <button class="m-btn btn-down"   id="sm-down"   aria-label="Down">▼</button>
+        <div></div>
+      </div>
+    </div>
   </div>
 
   <!-- SNAKE WIN MODAL -->
@@ -1867,22 +1881,6 @@
   <div id="win-lightbox">
     <span class="lb-close-hint">click anywhere to close</span>
     <img src="adeeb.jpg" alt="Adeeb Ahammed KM">
-  </div>
-
-    <!-- Virtual Keyboard D-pad for mobile devices -->
-    <div class="mobile-controls" id="snake-mobile-controls">
-      <div class="mobile-grid">
-        <div></div>
-        <button class="m-btn btn-up" id="sm-up" aria-label="Up">▲</button>
-        <div></div>
-        <button class="m-btn btn-left" id="sm-left" aria-label="Left">◀</button>
-        <button class="m-btn btn-action" id="sm-action" aria-label="Start">START</button>
-        <button class="m-btn btn-right" id="sm-right" aria-label="Right">▶</button>
-        <div></div>
-        <button class="m-btn btn-down" id="sm-down" aria-label="Down">▼</button>
-        <div></div>
-      </div>
-    </div>
   </div>
 
   <!-- ============ TOP STATUS BAR ============ -->
