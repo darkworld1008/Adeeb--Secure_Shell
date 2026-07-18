@@ -1155,6 +1155,24 @@
       color: var(--green);
     }
 
+    .snake-secret-hint {
+      font-size: 11px;
+      color: var(--red);
+      letter-spacing: 1.2px;
+      margin-top: 6px;
+      text-align: center;
+      animation: secretBlink 2.2s step-end infinite;
+      max-width: 90vw;
+    }
+    .snake-secret-hint b {
+      color: var(--amber);
+      font-weight: 700;
+    }
+    @keyframes secretBlink {
+      0%, 60%, 100% { opacity: 1; }
+      70%, 90%      { opacity: 0; }
+    }
+
     /* ============ TERMINAL CARET CURSOR ============ */
     @media (pointer:fine) {
       body {
@@ -1851,6 +1869,7 @@
         style="color:var(--green-dim);">CTRL+Z or ✕ to exit</span></div>
     <div class="snake-frame"><canvas id="snake-canvas" width="400" height="400"></canvas></div>
     <div class="snake-msg" id="snake-msg">Press <b>ENTER</b> or <b>SPACE</b> to start — arrow keys / WASD to steer</div>
+    <div class="snake-secret-hint">&#9632; CLASSIFIED — reach score <b>10</b> to decrypt operator file</div>
     <!-- Virtual D-pad for mobile — only visible on touch devices, inside overlay -->
     <div class="mobile-controls" id="snake-mobile-controls">
       <div class="mobile-grid">
