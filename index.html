@@ -1871,7 +1871,7 @@
   <div id="snake-win-modal">
     <div class="win-title">CONGRATULATIONS!</div>
     <div class="win-score-badge" id="win-score-badge">SCORE: 0</div>
-    <div class="win-sub">You scored 20+ &mdash; impressive neural bandwidth.<br>You just cracked ADEEB&rsquo;s snake challenge.</div>
+    <div class="win-sub">You scored 10+ &mdash; impressive neural bandwidth.<br>You just cracked ADEEB&rsquo;s snake challenge.</div>
     <button class="btn" id="win-view-photo" style="border-color:var(--green);color:var(--green);">&gt; view_operator_photo</button>
     <div class="win-hint">press ESC or click below to close</div>
     <button class="btn ghost" id="win-close-btn">&gt; close_session</button>
@@ -2834,8 +2834,8 @@
           msgEl.innerHTML = 'Press <b>ENTER</b> to try again — <b>CTRL+Z</b> to exit';
           draw();
           updateActionBtn();
-          // Show win modal if score >= 20
-          if (score >= 20) {
+          // Show win modal if score >= 10
+          if (score >= 10) {
             setTimeout(() => {
               document.getElementById('win-score-badge').textContent = 'SCORE: ' + score;
               document.getElementById('snake-win-modal').classList.add('active');
