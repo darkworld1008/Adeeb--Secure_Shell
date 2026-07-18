@@ -11,8 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;500;700;800&display=swap"
     rel="stylesheet">
-  <!-- EmailJS SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
   <style>
     :root {
       --bg: #03080e;
@@ -3088,12 +3087,25 @@
         alert('Fill in all fields before transmitting.');
         return;
       }
+      // Remove old status
+      const old = document.getElementById('cf-status');
+      if (old) old.remove();
 
-      } finally {
-        cfSubmit.innerHTML = originalText;
-        cfSubmit.disabled = false;
-        cfSubmit.style.opacity = '1';
-      }
+      // Build mailto link — opens the visitor's email client pre-filled
+      const subject = encodeURIComponent('Portfolio Contact from ' + name);
+      const body    = encodeURIComponent(
+        'Hi Adeeb,\n\n' + msg +
+        '\n\n— ' + name +
+        '\nReply-to: ' + email
+      );
+      window.location.href = `mailto:adeebahamedkm@gmail.com?subject=${subject}&body=${body}`;
+
+      // Show confirmation
+      const status = document.createElement('p');
+      status.id = 'cf-status';
+      status.style.cssText = 'color:var(--green);margin-top:12px;font-size:.85rem;letter-spacing:.05em;';
+      status.textContent = '✔ YOUR EMAIL CLIENT OPENED — review the pre-filled message and hit Send.';
+      cfSubmit.insertAdjacentElement('afterend', status);
     });
 
     /* ============ SNAKE WIN MODAL ============ */
