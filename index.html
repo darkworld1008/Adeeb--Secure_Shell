@@ -1015,6 +1015,54 @@
       display: flex;
     }
 
+    /* ── SNAKE WIN CARD ─────────────────────────────── */
+    #snake-win-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 900;
+      background: rgba(2, 8, 4, 0.97);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    #snake-win-modal.active { display: flex; }
+    .win-title {
+      font-family: var(--font-display);
+      font-size: clamp(32px, 8vw, 64px);
+      color: var(--green);
+      letter-spacing: 3px;
+      text-shadow: 0 0 24px rgba(61,255,138,0.5);
+      animation: winPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes winPulse {
+      0%,100% { text-shadow: 0 0 24px rgba(61,255,138,0.5); }
+      50%      { text-shadow: 0 0 48px var(--green), 0 0 90px rgba(61,255,138,0.3); }
+    }
+    .win-score-badge {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--amber);
+      border: 1px solid var(--amber);
+      padding: 6px 28px;
+      letter-spacing: 2px;
+    }
+    .win-sub {
+      color: var(--green-soft);
+      font-size: 14px;
+      letter-spacing: 1px;
+      max-width: 380px;
+      line-height: 1.7;
+    }
+    .win-hint {
+      font-size: 11px;
+      color: var(--green-dim);
+      letter-spacing: 1px;
+    }
+
     #snake-close {
       position: absolute;
       top: 18px;
@@ -1776,21 +1824,13 @@
     <div class="snake-msg" id="snake-msg">Press <b>ENTER</b> or <b>SPACE</b> to start — arrow keys / WASD to steer</div>
   </div>
 
-  <!-- SNAKE WIN MODAL -->
+  <!-- SNAKE WIN MODAL — text only, no images -->
   <div id="snake-win-modal">
-    <div class="win-title" id="win-title-text">CONGRATULATIONS!</div>
+    <div class="win-title">CONGRATULATIONS!</div>
     <div class="win-score-badge" id="win-score-badge">SCORE: 0</div>
-    <div class="win-photo-wrap" id="win-photo-btn" title="Click to view full photo">
-      <img src="adeeb.jpg" alt="Adeeb Ahammed KM" loading="lazy">
-    </div>
-    <div class="win-sub">You solved this — impressive neural bandwidth.<br>You just beat ADEEB's snake challenge.</div>
-    <div class="win-hint">↑ click the photo to open • press ESC to close</div>
+    <div class="win-sub">You scored 20+ — impressive neural bandwidth.<br>You just cracked ADEEB’s snake challenge.</div>
+    <div class="win-hint">press ESC or click below to close</div>
     <button class="btn" id="win-close-btn">&gt; close_session</button>
-  </div>
-
-  <!-- PHOTO LIGHTBOX -->
-  <div id="win-lightbox">
-    <img src="adeeb.jpg" alt="Adeeb Ahammed KM">
   </div>
     <!-- Virtual Keyboard D-pad for mobile devices -->
     <div class="mobile-controls" id="snake-mobile-controls">
@@ -3110,32 +3150,16 @@
 
     /* ============ SNAKE WIN MODAL ============ */
     (function () {
-      const winModal   = document.getElementById('snake-win-modal');
-      const lightbox   = document.getElementById('win-lightbox');
-      const photoBtn   = document.getElementById('win-photo-btn');
-      const closeBtn   = document.getElementById('win-close-btn');
+      const winModal = document.getElementById('snake-win-modal');
+      const closeBtn = document.getElementById('win-close-btn');
+      if (!winModal || !closeBtn) return;
 
-      // Close win modal
       closeBtn.addEventListener('click', () => {
         winModal.classList.remove('active');
       });
 
-      // Open lightbox on photo click
-      photoBtn.addEventListener('click', () => {
-        lightbox.classList.add('active');
-      });
-
-      // Close lightbox on click anywhere
-      lightbox.addEventListener('click', () => {
-        lightbox.classList.remove('active');
-      });
-
-      // ESC closes both
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          lightbox.classList.remove('active');
-          winModal.classList.remove('active');
-        }
+        if (e.key === 'Escape') winModal.classList.remove('active');
       });
     })();
 
