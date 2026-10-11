@@ -2191,9 +2191,16 @@
             <span class="tag">Disaster Recovery</span>
             <span class="tag">Cryptographic Audit</span>
           </div>
-          <div style="margin-top:16px; display: flex; gap: 10px; flex-wrap: wrap;">
-            <span style="font-family:var(--font-mono); font-size:11.5px; background:#000; border:1px solid var(--green-dim); padding:10px 14px; color:var(--green-soft);">
-              &gt; tests: 136/136 PASS (0 npm runtime deps)
+          <div style="margin-top:16px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+            <button class="btn" onclick="window.runAstraDemo &amp;&amp; window.runAstraDemo();" style="border-color:var(--green); color:var(--green); font-size:11.5px; padding:10px 16px;">
+              &gt; run_security_demo &#9654;
+            </button>
+            <a href="https://github.com/darkworld1008/Astra26" target="_blank" rel="noopener"
+              style="font-family:var(--font-mono); font-size:11.5px; background:#000; border:1px solid var(--line); padding:10px 14px; color:var(--amber); text-decoration:none; display:inline-block;">
+              &gt; source_repository &#8599;
+            </a>
+            <span style="font-family:var(--font-mono); font-size:11px; color:var(--green-soft);">
+              [136/136 PASS &bull; 0 npm runtime deps]
             </span>
           </div>
         </div>
@@ -2692,6 +2699,7 @@
         ['history', 'show commands you have run'],
         ['neofetch', 'show a system summary'],
         ['snake', 'launch a classic Snake game'],
+        ['astra26', 'simulate Astra26 zero-trust verification pipeline'],
         ['clear', 'clear the terminal']
       ];
 
@@ -2837,10 +2845,55 @@
             print(arg, 'out');
             break;
 
+          case 'astra26':
+          case 'trustpass':
+            busy = true;
+            await typeLines([
+              ['[ASTRA26 // ZERO-TRUST SECURITY ENGINE DEMO]', 'info'],
+              ['Engine: Ed25519 + SHA-256 (RFC 8785 JCS) | Deps: 0 npm runtime', 'out'],
+              ['----------------------------------------------------------------', 'out'],
+              ['[*] SCENARIO 1: Clean Clinical Payload (EHR -> Downstream)', 'info'],
+              ['    Payload: { patient: "P-104", rx: "Amoxicillin", dose: "500mg" }', 'out'],
+              ['    Canonicalizing (RFC 8785) & computing SHA-256 digest... OK', 'out'],
+              ['    Verifying Ed25519 signature against pinned trust root... OK', 'out'],
+              ['    Replay & Freshness check (nonce: 8f3c7b21, skew: <1s)... OK', 'out'],
+              ['    Risk Score: 0/100 (LOW) -> DECISION: ALLOW [Trust-Pass Issued]', 'out'],
+              ['', 'out'],
+              ['[*] SCENARIO 2: In-Transit Tamper Attack (Medication Alteration)', 'info'],
+              ['    Intercepted dose modified: 500mg -> 5000mg', 'err'],
+              ['    Recalculating SHA-256 digest with timingSafeEqual()... MISMATCH!', 'err'],
+              ['    Risk Score: 95/100 (CRITICAL) -> DECISION: QUARANTINE [Tamper Alert]', 'err'],
+              ['', 'out'],
+              ['[*] SCENARIO 3: Downtime Disaster Mode (100% Offline QR Card)', 'info'],
+              ['    Network: DOWN | EHR Server: DOWN | Database: OFFLINE', 'info'],
+              ['    Scanning TP1. base64 safety card into frontline device...', 'out'],
+              ['    Local cryptographic verification (Zero Server Call)...', 'out'],
+              ['    Signature Authentic & Intact -> STATUS: VALID [Safe For Emergency Care]', 'out'],
+              ['----------------------------------------------------------------', 'out'],
+              ['[PASS] 136/136 test assertions verified successfully.', 'info']
+            ], 65);
+            busy = false;
+            break;
+
           default:
             print(cmd + ': command not found. Type "help" for a list of commands.', 'err');
         }
       }
+
+      window.runAstraDemo = function() {
+        const termSec = document.getElementById('terminal');
+        if (termSec) {
+          termSec.scrollIntoView({ behavior: 'smooth' });
+          setTimeout(() => {
+            if (!busy) {
+              input.value = 'astra26';
+              run('astra26');
+              input.value = '';
+              input.focus();
+            }
+          }, 450);
+        }
+      };
 
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
