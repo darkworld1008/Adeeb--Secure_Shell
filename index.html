@@ -1946,7 +1946,7 @@
     </div>
     <div class="hero-stats">
       <div><strong>4</strong>technical cores</div>
-      <div><strong>3</strong>active projects</div>
+      <div><strong>6</strong>active projects</div>
       <div><strong>2028</strong>expected graduation</div>
       <div><strong>IN</strong>Kerala, India</div>
     </div>
@@ -2157,6 +2157,44 @@
               style="font-family:var(--font-mono);font-size:11.5px;background:#000;border:1px solid var(--green);padding:10px 14px;color:var(--green);text-decoration:none;display:inline-block;">
               &gt; open_dashboard &#8599;
             </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ASTRA26: TRUST-PASS & DOWNTIME-PASS -->
+      <div class="panel case-file">
+        <div class="panel-body">
+          <div class="case-head">
+            <div>
+              <div class="case-id">CASE_FILE // 06 &mdash; ASTRA26</div>
+              <div class="case-title glow">ASTRA26 // TRUST-PASS &amp; DOWNTIME-PASS</div>
+            </div>
+            <div class="case-status" style="color:var(--green);">ROLE: SECURITY LAYER</div>
+          </div>
+          <p class="case-desc">
+            Collaborative team project where <strong>my dedicated responsibility was engineering the Security Layer &amp; Zero-Trust Cryptographic Engine</strong> (frontend and backend services handled by teammates). Built a clinical-data trust verification pipeline designed to prevent silent in-transit payload tampering (e.g., medication doses or allergy erasure) and provide disaster-resilient offline patient safety cards during ransomware/EHR outages.
+          </p>
+          <div class="threat-box" style="margin: 12px 0; font-size: 12px;">
+            <span class="th-label">SECURITY IMPLEMENTATION HIGHLIGHTS</span>
+            &bull; Deterministic canonicalization via RFC 8785 JSON Canonicalization Scheme (JCS).<br>
+            &bull; SHA-256 payload digest verification with constant-time <code>timingSafeEqual</code> comparisons.<br>
+            &bull; Ed25519 asymmetric digital signatures &amp; 64-byte signature malleability defense.<br>
+            &bull; Cryptographic provenance envelope with strict algorithm whitelisting &amp; replay defense.<br>
+            &bull; 100% offline-capable downtime disaster verification with zero runtime npm dependencies.
+          </div>
+          <div class="tags">
+            <span class="tag">Security Layer</span>
+            <span class="tag">Ed25519</span>
+            <span class="tag">SHA-256</span>
+            <span class="tag">RFC 8785 JCS</span>
+            <span class="tag">Zero-Trust</span>
+            <span class="tag">Disaster Recovery</span>
+            <span class="tag">Cryptographic Audit</span>
+          </div>
+          <div style="margin-top:16px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <span style="font-family:var(--font-mono); font-size:11.5px; background:#000; border:1px solid var(--green-dim); padding:10px 14px; color:var(--green-soft);">
+              &gt; tests: 136/136 PASS (0 npm runtime deps)
+            </span>
           </div>
         </div>
       </div>
@@ -2660,7 +2698,7 @@
       const dirs = {
         about: 'ABOUT — bio, education, languages',
         skills: 'SCAN_RESULTS — Python, JavaScript, C/C++, Linux',
-        projects: 'CASE_FILES — Loomi, Mobile App, Linux Customization',
+        projects: 'CASE_FILES — Loomi, Mobile App, Linux, CloudVault, VM Monitor, Astra26',
         breachlab: 'BREACH_LAB — security research operations',
         terminal: 'TERMINAL — you are here',
         training: 'TRAINING_RANGE — 3 security exercises',
